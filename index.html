@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Оценка проекта ПЕТЕРБУРГ.VR — калькулятор по критериям</title>
+<style>
+  :root{
+    --bg:#0f1720; --panel:#fff; --ink:#1c2733; --mut:#64748b; --line:#e2e8f0;
+    --blue:#1d4ed8; --blue-soft:#dbeafe; --green:#15803d; --green-soft:#dcfce7;
+    --amber:#b45309; --amber-soft:#fef3c7; --red:#b91c1c; --red-soft:#fee2e2;
+    --hd:#b8cce4;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+    background:#eef2f6;color:var(--ink);line-height:1.5}
+  .wrap{max-width:1240px;margin:0 auto;padding:24px 18px 80px;display:grid;
+    grid-template-columns:1fr 340px;gap:24px}
+  header.top{grid-column:1/-1;background:linear-gradient(135deg,#1e3a8a,#2563eb);
+    color:#fff;border-radius:16px;padding:22px 26px;box-shadow:0 8px 24px rgba(30,58,138,.25)}
+  header.top h1{margin:0 0 4px;font-size:21px}
+  header.top p{margin:0;opacity:.9;font-size:13.5px}
+  .proj{margin-top:14px;display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  .proj input{flex:1;min-width:240px;border:none;border-radius:9px;padding:9px 12px;font-size:14px}
+  .badge{background:rgba(255,255,255,.18);padding:6px 12px;border-radius:20px;font-size:12.5px}
+  main{display:flex;flex-direction:column;gap:18px}
+  .crit{background:var(--panel);border-radius:14px;border:1px solid var(--line);
+    overflow:hidden;box-shadow:0 1px 3px rgba(15,23,42,.05)}
+  .crit>h2{margin:0;padding:15px 20px;background:var(--hd);font-size:16px;
+    display:flex;justify-content:space-between;align-items:center;gap:14px}
+  .crit>h2 .w{font-size:12px;font-weight:600;color:#1e3a5f;background:#fff;
+    padding:3px 9px;border-radius:14px;white-space:nowrap}
+  .crit-body{padding:6px 20px 18px}
+  .block{padding:14px 0;border-bottom:1px dashed var(--line)}
+  .block:last-child{border-bottom:none}
+  .block-h{font-weight:600;font-size:14.5px;margin-bottom:3px}
+  .block-sub{font-size:12.5px;color:var(--mut);margin-bottom:10px}
+  .opt{display:flex;gap:10px;padding:9px 11px;border:1px solid var(--line);
+    border-radius:9px;margin-bottom:7px;cursor:pointer;transition:.12s;align-items:flex-start}
+  .opt:hover{border-color:#94a3b8;background:#f8fafc}
+  .opt.sel{border-color:var(--blue);background:var(--blue-soft)}
+  .opt input{margin-top:3px}
+  .opt .txt{flex:1;font-size:13px}
+  .opt .code{font-weight:700;margin-right:4px}
+  .vals{margin-top:7px;display:flex;gap:6px;flex-wrap:wrap}
+  .vals button{border:1px solid #94a3b8;background:#fff;border-radius:7px;
+    padding:3px 11px;font-size:12.5px;cursor:pointer;font-weight:600;color:#475569}
+  .vals button.on{background:var(--blue);border-color:var(--blue);color:#fff}
+  .vals[hidden]{display:none}
+  .crit-foot{display:flex;justify-content:space-between;align-items:center;
+    background:#f1f5f9;padding:11px 20px;font-size:13px;border-top:1px solid var(--line)}
+  .crit-foot b{font-size:15px}
+  .note{background:var(--amber-soft);border-left:4px solid var(--amber);
+    border-radius:8px;padding:11px 13px;margin:12px 0 2px;font-size:12.5px;color:#5b3d09}
+  .note.ok{background:var(--green-soft);border-color:var(--green);color:#14532d}
+  .note.risk{background:var(--red-soft);border-color:var(--red);color:#7f1d1d}
+  .note b{display:block;margin-bottom:3px}
+  /* sidebar */
+  aside{position:sticky;top:18px;align-self:start;display:flex;flex-direction:column;gap:16px}
+  .score-card{background:var(--panel);border-radius:14px;border:1px solid var(--line);
+    padding:20px;text-align:center;box-shadow:0 1px 3px rgba(15,23,42,.05)}
+  .score-num{font-size:46px;font-weight:800;line-height:1;color:var(--blue)}
+  .score-num span{font-size:18px;color:var(--mut);font-weight:600}
+  .score-lbl{font-size:13px;color:var(--mut);margin-top:4px}
+  .gauge{height:10px;background:#e2e8f0;border-radius:6px;margin:14px 0 4px;overflow:hidden}
+  .gauge>i{display:block;height:100%;background:linear-gradient(90deg,#f59e0b,#16a34a);
+    border-radius:6px;transition:width .3s}
+  .mini{display:flex;flex-direction:column;gap:9px;margin-top:14px;text-align:left}
+  .mini-row{font-size:12px}
+  .mini-row .lab{display:flex;justify-content:space-between;margin-bottom:3px}
+  .bar{height:7px;background:#e2e8f0;border-radius:5px;overflow:hidden}
+  .bar>i{display:block;height:100%;background:var(--blue);border-radius:5px;transition:width .3s}
+  .rec{background:var(--panel);border-radius:14px;border:1px solid var(--line);
+    padding:16px 18px;box-shadow:0 1px 3px rgba(15,23,42,.05)}
+  .rec h3{margin:0 0 4px;font-size:14.5px}
+  .rec .hint{font-size:11.5px;color:var(--mut);margin-bottom:11px}
+  .rec-item{border:1px solid var(--line);border-radius:9px;padding:10px 11px;
+    margin-bottom:8px;font-size:12px}
+  .rec-item .top{display:flex;justify-content:space-between;font-weight:700;margin-bottom:3px}
+  .rec-item .gain{color:var(--green)}
+  .rec-item.done{opacity:.55}
+  .rec-item .top .gain.zero{color:var(--mut)}
+  .btns{display:flex;gap:8px}
+  .btns button{flex:1;border:1px solid var(--line);background:#fff;border-radius:9px;
+    padding:9px;font-size:12.5px;cursor:pointer;font-weight:600;color:#475569}
+  .btns button:hover{background:#f1f5f9}
+  .btns button.print{background:var(--blue);color:#fff;border-color:var(--blue)}
+  .legend{font-size:11px;color:var(--mut);text-align:center;margin-top:4px}
+  @media(max-width:980px){.wrap{grid-template-columns:1fr}aside{position:static}}
+  @media print{aside{position:static}.btns{display:none}body{background:#fff}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <h1>Калькулятор оценки проекта по критериям Комитета по культуре СПб</h1>
+    <p>Методика: 4 критерия с весом 0,25 каждый; внутри — взвешенные подкритерии. Итог 0–100.</p>
+    <div class="proj">
+      <input id="pname" value="ПЕТЕРБУРГ.VR — межведомственная экосистема художественной VR-фиксации">
+      <span class="badge">Субсидия 9 362 000 ₽ · бюджет 12 062 000 ₽</span>
+    </div>
+  </header>
+
+  <main id="main"></main>
+
+  <aside>
+    <div class="score-card">
+      <div class="score-num" id="total">0<span>/100</span></div>
+      <div class="score-lbl" id="verdict">Итоговая оценка</div>
+      <div class="gauge"><i id="gauge"></i></div>
+      <div class="mini" id="mini"></div>
+    </div>
+    <div class="rec">
+      <h3>Что подкрутить</h3>
+      <div class="hint">Отсортировано по приросту итоговых баллов при доведении пункта до максимума.</div>
+      <div id="recs"></div>
+    </div>
+    <div class="btns">
+      <button onclick="resetAll()">Сбросить к экспертным</button>
+      <button class="print" onclick="window.print()">Печать / PDF</button>
+    </div>
+    <div class="legend" id="saved">✓ Выбор сохраняется автоматически в этом браузере</div>
+    <div class="legend">Предзаполнено консервативной экспертной оценкой по тексту КП. «Сбросить» очищает сохранённое.</div>
+  </aside>
+</div>
+
+<script>
+/* ---------- МОДЕЛЬ КРИТЕРИЕВ ----------
+   value-наборы взяты из «критерии оценки»; default — экспертная оценка проекта */
+const DATA=[
+ {id:1,w:.25,title:"Критерий актуальности, значимости и художественного уровня мероприятий в области культуры и искусства",
+  blocks:[
+   {id:"1.1",w:.5,h:"1.1. Актуальность и значимость для культуры Санкт-Петербурга (весовое значение критерия оценки — 0,5)",sub:"Выберите один вариант (1.1.1–1.1.4)",
+    def:"1.1.2",defv:50,
+    opts:[
+     {c:"1.1.1",v:[80,90,100],t:"Реализация мероприятия соответствует целям, задачам и направлениям развития сферы культуры Санкт-Петербурга, установленным государственной программой Санкт-Петербурга «Развитие сферы культуры в Санкт-Петербурге», актуальность мероприятия убедительно доказана, а мероприятие является традиционным¹ или особо значимым² для культурной жизни Санкт-Петербурга."},
+     {c:"1.1.2",v:[40,50,60],t:"Реализация мероприятия соответствует целям, задачам и направлениям развития сферы культуры Санкт-Петербурга, установленным государственной программой Санкт-Петербурга «Развитие сферы культуры в Санкт-Петербурге», актуальность мероприятия в целом проработана и (или) мероприятие проводится на высоком профессиональном уровне не менее трех лет при государственной поддержке, и пользуется популярностью у зрительской аудитории."},
+     {c:"1.1.3",v:[10,20],t:"Реализация мероприятия соответствует целям, задачам и направлениям развития сферы культуры Санкт-Петербурга, установленным государственной программой Санкт-Петербурга «Развитие сферы культуры в Санкт-Петербурге», является иным мероприятием, не предусмотренным подпунктами 1.1.1 и 1.1.2 настоящего Критерия."},
+     {c:"1.1.4",v:[0],t:"Является иным мероприятием, не предусмотренным подпунктами 1.1.1–1.1.3 настоящего Критерия."}]},
+   {id:"1.2",w:.5,h:"1.2. Художественный уровень (весовое значение критерия оценки — 0,5)",sub:"Выберите один вариант (1.2.1–1.2.4)",
+    def:"1.2.1",defv:80,
+    opts:[
+     {c:"1.2.1",v:[80,100],t:"Творческая концепция мероприятия предусматривает уникальный/высокий художественный уровень, в том числе: участие известных профессиональных*** творческих коллективов и исполнителей; и (или) представление произведений живописи, скульптуры, объектов декоративно-прикладного искусства и иных предметов материальной культуры, в том числе музейных предметов и предметов архивных и библиотечных фондов; и (или) участие деятелей культуры, имеющих почетные звания Российской Федерации, СССР, РСФСР, Санкт-Петербурга в области культуры и искусства (не менее 20% от общего количества лиц, непосредственно участвующих в реализации мероприятия или творческой команды, обеспечивающей его реализацию); и (или) участие известных**** зарубежных коллективов и исполнителей."},
+     {c:"1.2.2",v:[40,50,60],t:"Творческая концепция мероприятия предусматривает уникальный/высокий/средний художественный уровень, в том числе: участие профессиональных творческих коллективов и исполнителей; и (или) участие деятелей культуры, имеющих почетные звания Российской Федерации, СССР, РСФСР, Санкт-Петербурга (не менее 10% от общего количества лиц, непосредственно участвующих в реализации мероприятия или творческой команды, обеспечивающей его реализацию); и (или) участие зарубежных коллективов и исполнителей; и (или) известных в Санкт-Петербурге коллективов, имеющих опыт выступления в Санкт-Петербурге, в состав которых входят молодые, юные исполнители."},
+     {c:"1.2.3",v:[10,20],t:"Творческая концепция мероприятия предусматривает средний/удовлетворительный художественный уровень и участие иных творческих коллективов и (или) деятелей культуры, не предусмотренных пунктами 1.2.1 и 1.2.2."},
+     {c:"1.2.4",v:[0],t:"Творческая концепция мероприятия предусматривает удовлетворительный художественный уровень."}]}],
+  expert:[{k:"warn",b:"1.1 — добавить прямую ссылку на госпрограмму № 488",
+    t:"В КП есть Указы Президента и «Программа Губернатора», но критерий 1.1.1/1.1.2 требует соответствия именно госпрограмме СПб «Развитие сферы культуры в Санкт-Петербурге» (ППСПб 17.06.2014 № 488). Проект новый (не «традиционный» ≥5 лет) — для 1.1.1 нужно обосновать «особую значимость» (привязка к значимым событиям) ИЛИ принять 1.1.2."},
+   {k:"ok",b:"1.2 — сильная позиция: Капелла",
+    t:"Гос. академическая капелла = известный профессиональный коллектив (>30 лет, профобразование) → 1.2.1 обоснован. Усильте: поимённый список деятелей с почётными званиями и их доля ≥20%, письма-подтверждения Капеллы."}]},
+
+ {id:2,w:.25,title:"Критерий социальной значимости мероприятий в области культуры и искусства",
+  blocks:[
+   {id:"2",w:1,h:"Социальная значимость мероприятия",sub:"Выберите один вариант (2.1–2.6); весовое значение варианта — 1",
+    def:"2.1",defv:100,
+    opts:[
+     {c:"2.1",v:[100],t:"Мероприятие проводится в очном формате: с охватом зрительской аудитории на безвозмездной основе или проводится в интересах лиц с ограниченными возможностями здоровья и других групп населения, требующих социальной поддержки***** (весовое значение критерия оценки — 1)."},
+     {c:"2.2",v:[80],t:"Мероприятие проводится в очном формате: при реализации билетов, не менее 40% из которых распространяется на безвозмездной основе и (или) мероприятие предусматривает участие других групп населения, требующих социальной поддержки (весовое значение критерия оценки — 1)."},
+     {c:"2.3",v:[60],t:"Мероприятие проводится в очном формате: при реализации билетов, не менее 30% из которых распространяется на безвозмездной основе (весовое значение критерия оценки — 1)."},
+     {c:"2.4",v:[40],t:"Мероприятие проводится в очном формате: при реализации билетов, не менее 20% из которых распространяется на безвозмездной основе (весовое значение критерия оценки — 1)."},
+     {c:"2.5",v:[20],t:"Иные мероприятия, имеющие социальную значимость, но не предусмотренные пунктами 2.1–2.4 настоящего Критерия (весовое значение критерия оценки — 1)."},
+     {c:"2.6",v:[0],t:"Социальная значимость мероприятия не определена."}]}],
+  expert:[{k:"ok",b:"2.1 — сильнейшая позиция проекта (100)",
+    t:"VR-десант в районных библиотеках бесплатен для посетителей (нет продажи билетов), целевые группы — маломобильные граждане, серебряный возраст, жители периферийных районов. Прямо подпадает под 2.1. Закрепите в КП формулировку «доступ для посетителей на безвозмездной основе» и долю целевых групп."}]},
+
+ {id:3,w:.25,title:"Критерий уникальности и масштабности реализации мероприятий в области культуры и искусства",
+  blocks:[
+   {id:"3.1",w:.5,h:"3.1. Уникальность творческой концепции, реализация новых форм и направлений в искусстве (весовое значение критерия оценки — 0,5)",sub:"Выберите один вариант (3.1.1–3.1.3)",
+    def:"3.1.1",defv:90,
+    opts:[
+     {c:"3.1.1",v:[80,100],t:"Творческая концепция мероприятия предусматривает внедрение новых процессов и (или) демонстрацию исключительных образцов художественного творчества или исполнительского мастерства."},
+     {c:"3.1.2",v:[40,60],t:"Творческая концепция мероприятия предусматривает внедрение значительно улучшенных процессов, методов, практик, и (или) демонстрацию выдающихся образцов художественного творчества или исполнительского мастерства."},
+     {c:"3.1.3",v:[0,20],t:"В творческой концепции мероприятия отсутствуют признаки новизны в содержании; практики и методики, указанные в заявке, являются устаревшими."}]},
+   {id:"3.2",w:.5,h:"3.2. Масштабность реализации (охват благополучателей (зрителей и (или) участников) мероприятия) в очном и онлайн формате с трансляцией на телевидении и (или) в информационно-телекоммуникационной сети «Интернет» (весовое значение критерия оценки — 0,5)",sub:"Выберите один вариант (3.2.1–3.2.4)",
+    def:"3.2.3",defv:40,
+    opts:[
+     {c:"3.2.1",v:[100],t:"Не менее 10000 человек."},
+     {c:"3.2.2",v:[60],t:"От 5000 до 10000 человек."},
+     {c:"3.2.3",v:[40],t:"От 700 до 5000 человек."},
+     {c:"3.2.4",v:[0],t:"До 700 человек."}]}],
+  expert:[{k:"ok",b:"3.1 — высокая новизна (3.1.1)",
+    t:"«Одна из первых комплексных моделей VR-сохранения наследия» + апробация VR-отчётности по субсидиям = внедрение новых процессов. Обоснован 3.1.1 (80–100)."},
+   {k:"risk",b:"3.2 — ГЛАВНЫЙ резерв баллов",
+    t:"Заявлен прямой охват «не менее 3 000 человек» → попадает в 3.2.3 = 40. Шаг до ≥5 000 (3.2.2=60) или ≥10 000 (3.2.1=100) даёт максимальный прирост итога. Рычаги: засчитать онлайн-охват/трансляции в сети «Интернет» как охват благополучателей (критерий это прямо допускает), поднять плановый KPI посещаемости и методику его подсчёта (онлайн-просмотры VR-контента + ТВ/интернет-трансляции)."}]},
+
+ {id:4,w:.25,title:"Критерий экономической эффективности и обоснованности мероприятия в области культуры и искусства, наличие опыта использования средств бюджета Санкт-Петербурга",
+  blocks:[
+   {id:"4.1",w:.25,h:"4.1. Объем привлеченных внебюджетных средств в целях софинансирования реализации мероприятия (в процентном соотношении от общего объема затрат на реализацию мероприятия), % (весовое значение критерия оценки — 0,25)",sub:"Выберите диапазон софинансирования",
+    def:"o20",defv:100,
+    opts:[
+     {c:"o0",v:[0],t:"от 0% до 5%."},
+     {c:"o5",v:[20],t:"от 5% до 10%."},
+     {c:"o10",v:[60],t:"от 10% до 15%."},
+     {c:"o15",v:[80],t:"от 15% до 20%."},
+     {c:"o20",v:[100],t:"от 20% и более (по проекту: 2,7 млн ₽ / 12,06 млн ₽ ≈ 22,4%)."}]},
+   {id:"4.2",w:.15,h:"4.2. Соответствие расчета размера субсидии, представленного в заявке участника отбора, направлениям затрат, предельным объемам их финансового обеспечения (баллы присваиваются при отсутствии нарушений) (весовое значение критерия оценки — 0,15)",sub:"Баллы: 0 или 100",
+    def:"y",defv:100,
+    opts:[
+     {c:"y",v:[100],t:"Соответствует — нарушений по направлениям затрат и предельным объёмам их финансового обеспечения нет."},
+     {c:"n",v:[0],t:"Есть нарушения по направлениям и (или) предельным объёмам затрат."}]},
+   {id:"4.3",w:.3,h:"4.3. Обоснованность представленного расчета (подробность расчета по всем пунктам сметы затрат, баллы присваиваются при отсутствии нарушений) (весовое значение критерия оценки — 0,3)",sub:"Баллы: 0 или 100",
+    def:"y",defv:100,
+    opts:[
+     {c:"y",v:[100],t:"Расчёт подробный и обоснованный по всем пунктам сметы затрат, нарушений нет."},
+     {c:"n",v:[0],t:"Расчёт не обоснован / не детализирован по всем пунктам сметы затрат."}]},
+   {id:"4.4",w:.3,h:"4.4. Наличие у участника отбора опыта использования средств субсидий бюджета Санкт-Петербурга****** в 2022 — 2024 годах (баллы присваиваются при наличии опыта участника отбора, подтвержденного документами в соответствии с пунктами 2 или 3 приложений № 2 к приложениям № 1 и № 2 к постановлению) (весовое значение критерия оценки — 0,3)",sub:"Баллы: 0 или 100",
+    def:"n",defv:0,
+    opts:[
+     {c:"y",v:[100],t:"Опыт есть и подтверждён документами в соответствии с пунктами 2 или 3 приложений № 2 к приложениям № 1 и № 2 к постановлению."},
+     {c:"n",v:[0],t:"Опыта использования средств субсидий бюджета Санкт-Петербурга в 2022–2024 годах нет либо он не подтверждён документами."}]}],
+  expert:[{k:"risk",b:"4.4 — вероятный ноль, вес 0,3 (минус 7,5 итоговых баллов)",
+    t:"В КП реквизиты СОНКО — заглушки, опыт субсидий СПб 2022–2024 не описан. Если опыт есть — приложить подтверждающие документы (это вернёт 7,5 баллов). Если опыта нет — это неустранимый 0, компенсировать через другие рычаги."},
+   {k:"warn",b:"4.1 — риск переквалификации натурального вклада",
+    t:"22,4% даёт 100, но это натуральное (in-kind) софинансирование. Комиссия может не зачесть его как «привлечённые внебюджетные средства» → падение до 0–20. Подстраховка: часть вклада в денежной форме и/или документальное подтверждение оценки вклада партнёров."},
+   {k:"warn",b:"4.2 / 4.3 — бинарные, проверьте смету",
+    t:"4.3 (вес 0,3) и 4.2 (вес 0,15) — «всё или ничего». Сверьте смету с разрешёнными направлениями и предельными долями затрат (админрасходы: офис, бухгалтерия, юристы, аренда оборудования). Любое нарушение в 4.2 = −3,75 балла, провал детализации в 4.3 = −7,5 балла."}]}
+];
+
+/* ---------- РЕНДЕР ---------- */
+const state={}; // blockId -> {opt, val}
+const main=document.getElementById('main');
+
+DATA.forEach(cr=>{
+  const sec=document.createElement('section');sec.className='crit';
+  sec.innerHTML=`<h2><span>${cr.id}. ${cr.title}</span><span class="w">вес ${cr.w.toLocaleString('ru')} · 0–100</span></h2>`;
+  const body=document.createElement('div');body.className='crit-body';
+  cr.blocks.forEach(bl=>{
+    state[bl.id]={opt:bl.def,val:bl.defv};
+    const bd=document.createElement('div');bd.className='block';
+    bd.innerHTML=`<div class="block-h">${bl.h}</div><div class="block-sub">${bl.sub}</div>`;
+    bl.opts.forEach(op=>{
+      const lab=document.createElement('label');lab.className='opt';lab.dataset.b=bl.id;lab.dataset.o=op.c;
+      const multi=op.v.length>1;
+      lab.innerHTML=`<input type="radio" name="r_${bl.id}" ${op.c===bl.def?'checked':''}>
+        <span class="txt"><span class="code">${op.c}.</span>${op.t}
+        <span class="vals" ${multi?'':'hidden'}>${op.v.map(v=>`<button data-v="${v}">${v}</button>`).join('')}</span>
+        ${!multi?`<span class="vals2" style="display:none">${op.v[0]}</span>`:''}</span>`;
+      lab.querySelector('input').addEventListener('change',()=>{
+        state[bl.id].opt=op.c;
+        if(op.v.length===1) state[bl.id].val=op.v[0];          // один балл
+        else if(op.c===bl.def) state[bl.id].val=bl.defv;        // экспертный по умолчанию
+        else state[bl.id].val=op.v[op.v.length-1];              // иначе верх диапазона
+        recalc();
+      });
+      lab.querySelectorAll('.vals button').forEach(btn=>{
+        btn.addEventListener('click',e=>{
+          e.preventDefault();
+          lab.querySelector('input').checked=true;
+          state[bl.id].opt=op.c;state[bl.id].val=+btn.dataset.v;
+          recalc();
+        });
+      });
+      bd.appendChild(lab);
+    });
+    body.appendChild(bd);
+  });
+  if(cr.expert){
+    cr.expert.forEach(e=>{
+      const n=document.createElement('div');
+      n.className='note'+(e.k==='ok'?' ok':e.k==='risk'?' risk':'');
+      n.innerHTML=`<b>${e.b}</b>${e.t}`;
+      body.appendChild(n);
+    });
+  }
+  const foot=document.createElement('div');foot.className='crit-foot';
+  foot.innerHTML=`<span id="cf_${cr.id}"></span><span>Вклад в итог: <b id="cw_${cr.id}">0</b> / ${(cr.w*100)}</span>`;
+  sec.appendChild(body);sec.appendChild(foot);
+  main.appendChild(sec);
+});
+
+const NOTES=[
+ ["¹","Традиционное мероприятие — мероприятие, проводимое на высоком профессиональном уровне более пяти лет при государственной поддержке (финансовой, имущественной, информационной), пользующееся популярностью у зрительской аудитории."],
+ ["²","Особо значимое мероприятие для культурной жизни Санкт-Петербурга — это мероприятие, программа которого приурочена к важным общественно значимым и историческим событиям или посвящена особым событиям."],
+ ["*","Государственная программа Санкт-Петербурга «Развитие сферы культуры в Санкт-Петербурге», утвержденная постановлением Правительства Санкт-Петербурга от 17.06.2014 № 488."],
+ ["**","Известный профессиональный творческий коллектив — творческий коллектив, осуществляющий деятельность не менее 30 лет, состоящий из участников, имеющих соответствующее профильное образование."],
+ ["***","Профессиональный творческий коллектив — творческий коллектив, состоящий из участников, имеющих соответствующее профильное образование."],
+ ["****","Известный зарубежный коллектив — коллектив, осуществляющий деятельность не менее 10 лет."],
+ ["*****","Другие группы населения, требующие социальной поддержки — дети-сироты и дети, оставшиеся без попечения родителей, пенсионеры и граждане, достигшие возраста 60 и 55 лет (для мужчин и женщин соответственно) (участники приоритетного проекта «Серебряный возраст»), многодетные и малоимущие семьи, участники Великой Отечественной войны, участники Специальной военной операции, а также члены их семей."],
+ ["******","Сведения об опыте включаются в заявку организации на получение субсидии."]
+];
+const nsec=document.createElement('section');nsec.className='crit';
+nsec.innerHTML='<h2><span>Примечания</span><span class="w">из документа</span></h2>';
+const nb=document.createElement('div');nb.className='crit-body';
+nb.innerHTML=NOTES.map(n=>`<div class="block" style="padding:9px 0"><span style="font-weight:700;margin-right:6px">${n[0]}</span><span style="font-size:12.5px">${n[1]}</span></div>`).join('')+
+ '<div class="block" style="padding:9px 0;border:none"><span style="font-weight:700;margin-right:6px">Принятое сокращение:</span><span style="font-size:12.5px">смета затрат — расчет размера субсидий, запрашиваемых претендентом на получение субсидий, представленный претендентом на получение субсидий в составе заявки на участие в конкурсном отборе, составленный в соответствии с направлениями затрат.</span></div>';
+nsec.appendChild(nb);main.appendChild(nsec);
+
+function critScore(cr){let s=0;cr.blocks.forEach(b=>{s+=b.w*state[b.id].val});return s;}
+
+function recalc(){
+  document.querySelectorAll('.opt').forEach(l=>{
+    const sel=state[l.dataset.b].opt===l.dataset.o;
+    l.classList.toggle('sel',sel);
+    l.querySelectorAll('.vals button').forEach(b=>
+      b.classList.toggle('on',sel&&+b.dataset.v===state[l.dataset.b].val));
+  });
+  let total=0;const mini=[];
+  DATA.forEach(cr=>{
+    const cs=critScore(cr), contrib=cs*cr.w;total+=contrib;
+    document.getElementById('cf_'+cr.id).innerHTML=
+      `Оценка критерия: <b>${cs.toFixed(1)}</b> / 100`;
+    document.getElementById('cw_'+cr.id).textContent=contrib.toFixed(2);
+    mini.push({id:cr.id,title:cr.title,cs,contrib,max:cr.w*100});
+  });
+  document.getElementById('total').innerHTML=total.toFixed(1)+'<span>/100</span>';
+  document.getElementById('gauge').style.width=total+'%';
+  const v=document.getElementById('verdict');
+  if(total>=85){v.textContent='Очень сильная заявка';v.style.color='var(--green)';}
+  else if(total>=70){v.textContent='Конкурентоспособная заявка';v.style.color='var(--green)';}
+  else if(total>=55){v.textContent='Средняя — нужны доработки';v.style.color='var(--amber)';}
+  else {v.textContent='Слабая — требуется усиление';v.style.color='var(--red)';}
+
+  document.getElementById('mini').innerHTML=mini.map(m=>`
+    <div class="mini-row"><div class="lab"><span>${m.id}. ${m.title.slice(0,32)}…</span>
+    <span><b>${m.cs.toFixed(0)}</b>/100</span></div>
+    <div class="bar"><i style="width:${m.cs}%"></i></div></div>`).join('');
+
+  // recommendations: weighted gain to max per block
+  const recs=[];
+  DATA.forEach(cr=>cr.blocks.forEach(b=>{
+    const cur=state[b.id].val, gain=(100-cur)*b.w*cr.w;
+    recs.push({crit:cr.id,b:b.id,h:b.h,cur,gain});
+  }));
+  recs.sort((a,b)=>b.gain-a.gain);
+  document.getElementById('recs').innerHTML=recs.map(r=>`
+    <div class="rec-item ${r.gain<0.05?'done':''}">
+      <div class="top"><span>${r.b}</span>
+        <span class="gain ${r.gain<0.05?'zero':''}">${r.gain<0.05?'максимум':'+'+r.gain.toFixed(2)+' б.'}</span></div>
+      <div>${r.h.replace(/^[\d.]+\s*/,'')} — сейчас ${r.cur}/100</div>
+    </div>`).join('');
+  save();
+}
+
+const LSKEY='vr2_eval_v1';
+function save(){
+  try{
+    localStorage.setItem(LSKEY,JSON.stringify({
+      pname:document.getElementById('pname').value, state:state
+    }));
+    const s=document.getElementById('saved');
+    if(s){const d=new Date();
+      s.textContent='✓ Сохранено автоматически в '+
+        d.toLocaleTimeString('ru',{hour:'2-digit',minute:'2-digit'});}
+  }catch(e){}
+}
+function load(){
+  let raw;try{raw=localStorage.getItem(LSKEY);}catch(e){return;}
+  if(!raw)return;
+  let d;try{d=JSON.parse(raw);}catch(e){return;}
+  if(d.pname)document.getElementById('pname').value=d.pname;
+  if(d.state)Object.keys(d.state).forEach(id=>{
+    if(state[id]&&d.state[id]&&typeof d.state[id].val==='number'){
+      state[id]={opt:d.state[id].opt,val:d.state[id].val};
+      const inp=document.querySelector(`.opt[data-b="${id}"][data-o="${state[id].opt}"] input`);
+      if(inp)inp.checked=true;
+    }
+  });
+}
+
+function resetAll(){
+  try{localStorage.removeItem(LSKEY);}catch(e){}
+  DATA.forEach(cr=>cr.blocks.forEach(b=>{
+    state[b.id]={opt:b.def,val:b.defv};
+    const inp=document.querySelector(`.opt[data-b="${b.id}"][data-o="${b.def}"] input`);
+    if(inp)inp.checked=true;
+  }));
+  recalc();
+}
+document.getElementById('pname').addEventListener('input',save);
+load();
+recalc();
+</script>
+</body>
+</html>
