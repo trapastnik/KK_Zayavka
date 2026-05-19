@@ -275,6 +275,7 @@
       <span><b>Укрупнение КП:</b></span>
       <label style="display:flex;gap:6px;cursor:pointer"><input type="radio" name="kpmode" value="dir" checked> по направлению (рекомендую)</label>
       <label style="display:flex;gap:6px;cursor:pointer"><input type="radio" name="kpmode" value="group"> по группе</label>
+      <label style="display:flex;gap:6px;cursor:pointer"><input type="radio" name="kpmode" value="prod1"> производство — одним КП (все 3 типа), остальное по направлению</label>
       <label style="display:flex;gap:6px;cursor:pointer"><input type="radio" name="kpmode" value="row"> по каждой строке</label>
     </div>
     <div style="margin-top:6px;display:flex;gap:8px;flex-wrap:wrap">
@@ -918,6 +919,15 @@ function kpLots(){
       G.rows.forEach(r=>{const L=LIM23.find(x=>x.n===r.dir)||{};const s=rsum(r);
         if(L.k&&s>0){items.push({name:r.name,unit:r.unit,qty:(+r.qty||1)*rmon(r),rate:+r.rate||0});tot+=s;}});
       if(items.length)out.push({title:G.g,items,total:tot});});
+  }else if(mode==='prod1'){
+    const pit=[];let ptot=0;const map={};
+    dtl.forEach(G=>{const isProd=/^Производство/.test(G.g);
+      G.rows.forEach(r=>{const L=LIM23.find(x=>x.n===r.dir)||{};const s=rsum(r);if(!(L.k&&s>0))return;
+        if(isProd){pit.push({name:r.name,unit:r.unit,qty:(+r.qty||1)*rmon(r),rate:+r.rate||0});ptot+=s;}
+        else{if(!map[r.dir])map[r.dir]={title:dirLabel(r.dir)+' — '+L.t,items:[],total:0};
+          map[r.dir].items.push({name:r.name,unit:r.unit,qty:(+r.qty||1)*rmon(r),rate:+r.rate||0});map[r.dir].total+=s;}});});
+    if(pit.length)out.push({title:'Производство собственного VR-контента (15 фильмов: большой/средний/малый + лицензии/накладные)',items:pit,total:ptot});
+    Object.keys(map).sort((a,b)=>a-b).forEach(k=>out.push(map[k]));
   }else{
     const map={};
     dtl.forEach(G=>G.rows.forEach(r=>{const L=LIM23.find(x=>x.n===r.dir)||{};const s=rsum(r);
@@ -952,7 +962,7 @@ function openKPList(){
   const m=document.getElementById('kpModal');
   if(!_lots.length){m.innerHTML='<p>Нет закупочных строк с суммой > 0. Заполните детальный бюджет.</p><button onclick="closeKP()" style="border:1px solid var(--line);background:#fff;border-radius:8px;padding:6px 12px;cursor:pointer;margin-top:8px">Закрыть</button>';document.getElementById('kpModalWrap').style.display='';return;}
   m.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-     <h2 style="margin:0;font-size:17px">КП по лотам (${_lots.length}) · режим: ${({dir:'по направлению',group:'по группе',row:'по строке'})[kpMode()]}</h2>
+     <h2 style="margin:0;font-size:17px">КП по лотам (${_lots.length}) · режим: ${({dir:'по направлению',group:'по группе',row:'по строке',prod1:'производство одним лотом + остальное по направлению'})[kpMode()]}</h2>
      <button onclick="closeKP()" style="border:1px solid var(--line);background:#fff;border-radius:8px;padding:6px 12px;cursor:pointer">Закрыть ✕</button></div>
    <div class="sub">На каждый лот — 3 КП с разбивкой по позициям. Наша сметная цена лота = средняя из трёх (±10%).</div>
    ${_lots.map((lot,idx)=>`<div style="border:1px solid var(--line);border-radius:10px;padding:11px;margin:8px 0;display:flex;justify-content:space-between;align-items:center;gap:10px">
