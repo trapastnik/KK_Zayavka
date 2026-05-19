@@ -86,6 +86,17 @@
   .btns button:hover{background:#f1f5f9}
   .btns button.print{background:var(--blue);color:#fff;border-color:var(--blue)}
   .legend{font-size:11px;color:var(--mut);text-align:center;margin-top:4px}
+  .fm{background:var(--panel);border-radius:14px;border:1px solid var(--line);
+      padding:18px 20px;box-shadow:0 1px 3px rgba(15,23,42,.05)}
+  .fm h3{margin:0 0 12px;font-size:14.5px}
+  .fm .row{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:9px}
+  .fm .row label{font-size:12.5px;color:var(--mut)}
+  .fm .row input{width:128px;text-align:right;border:1px solid var(--line);
+      border-radius:8px;padding:6px 9px;font-size:13px;font-weight:600}
+  .fm .out{margin-top:6px;padding-top:12px;border-top:1px dashed var(--line);text-align:center}
+  .fm .out .num{font-size:25px;font-weight:800;color:var(--green)}
+  .fm .out .lbl{font-size:11.5px;color:var(--mut);margin-top:3px}
+  .fm .brk{font-size:11px;color:var(--mut);margin-top:9px;text-align:center;line-height:1.5}
   @media(max-width:980px){.wrap{grid-template-columns:1fr}aside{position:static}}
   @media print{aside{position:static}.btns{display:none}body{background:#fff}}
 </style>
@@ -97,7 +108,7 @@
     <p>Методика: 4 критерия с весом 0,25 каждый; внутри — взвешенные подкритерии. Итог 0–100.</p>
     <div class="proj">
       <input id="pname" value="ПЕТЕРБУРГ.VR — межведомственная экосистема художественной VR-фиксации">
-      <span class="badge">Субсидия 9 362 000 ₽ · бюджет 12 062 000 ₽</span>
+      <span class="badge" id="badge">—</span>
     </div>
   </header>
 
@@ -109,6 +120,13 @@
       <div class="score-lbl" id="verdict">Итоговая оценка</div>
       <div class="gauge"><i id="gauge"></i></div>
       <div class="mini" id="mini"></div>
+    </div>
+    <div class="fm">
+      <h3>Финансовая модель</h3>
+      <div class="row"><label for="fmBudget">Общий бюджет, ₽</label><input id="fmBudget" type="number" min="0" step="1000" value="12062000"></div>
+      <div class="row"><label for="fmThreshold">Порог допуска, баллов</label><input id="fmThreshold" type="number" min="0" max="100" step="1" value="60"></div>
+      <div class="out"><div class="num" id="fmSubsidy">0 ₽</div><div class="lbl">Расчётная субсидия (бюджет СПб) по итоговому баллу</div></div>
+      <div class="brk" id="fmBreak"></div>
     </div>
     <div class="rec">
       <h3>Что подкрутить</h3>
@@ -190,11 +208,11 @@ const DATA=[
    {id:"4.1",w:.25,h:"4.1. Объем привлеченных внебюджетных средств в целях софинансирования реализации мероприятия (в процентном соотношении от общего объема затрат на реализацию мероприятия), % (весовое значение критерия оценки — 0,25)",sub:"Выберите диапазон софинансирования",
     def:"o20",defv:100,
     opts:[
-     {c:"o0",v:[0],t:"от 0% до 5%."},
-     {c:"o5",v:[20],t:"от 5% до 10%."},
-     {c:"o10",v:[60],t:"от 10% до 15%."},
-     {c:"o15",v:[80],t:"от 15% до 20%."},
-     {c:"o20",v:[100],t:"от 20% и более (по проекту: 2,7 млн ₽ / 12,06 млн ₽ ≈ 22,4%)."}]},
+     {c:"o0",v:[0],cf:0,t:"от 0% до 5%."},
+     {c:"o5",v:[20],cf:.05,t:"от 5% до 10%."},
+     {c:"o10",v:[60],cf:.10,t:"от 10% до 15%."},
+     {c:"o15",v:[80],cf:.15,t:"от 15% до 20%."},
+     {c:"o20",v:[100],cf:.20,t:"от 20% и более (по проекту: 2,7 млн ₽ / 12,06 млн ₽ ≈ 22,4%)."}]},
    {id:"4.2",w:.15,h:"4.2. Соответствие расчета размера субсидии, представленного в заявке участника отбора, направлениям затрат, предельным объемам их финансового обеспечения (баллы присваиваются при отсутствии нарушений) (весовое значение критерия оценки — 0,15)",sub:"Баллы: 0 или 100",
     def:"y",defv:100,
     opts:[
@@ -295,6 +313,35 @@ nsec.appendChild(nb);main.appendChild(nsec);
 
 function critScore(cr){let s=0;cr.blocks.forEach(b=>{s+=b.w*state[b.id].val});return s;}
 
+function fmtRub(x){return Math.round(x||0).toLocaleString('ru-RU')+' ₽';}
+function cf41(){
+  try{
+    const o=state['4.1']&&state['4.1'].opt;
+    const blk=DATA.find(c=>c.id===4).blocks.find(b=>b.id==='4.1');
+    const op=blk.opts.find(x=>x.c===o);
+    return op&&typeof op.cf==='number'?op.cf:0;
+  }catch(e){return 0;}
+}
+function finModel(S){
+  const B=+document.getElementById('fmBudget').value||0;
+  let T=parseFloat(document.getElementById('fmThreshold').value);
+  if(isNaN(T))T=0; T=Math.min(Math.max(T,0),100);
+  const c=cf41();
+  let prop = (S<T||T>=100) ? 0 : B*(S-T)/(100-T);
+  if(!isFinite(prop)||prop<0)prop=0;
+  const sub=prop*(1-c);
+  document.getElementById('fmSubsidy').textContent=fmtRub(sub);
+  const brk=document.getElementById('fmBreak');
+  if(S<T){
+    brk.textContent=`Итоговый балл ${S.toFixed(1)} ниже порога ${T} → субсидия 0 ₽.`;
+  }else{
+    brk.innerHTML=`Пропорция по баллу ((${S.toFixed(1)} − ${T}) / (100 − ${T})) × бюджет = ${fmtRub(prop)}.<br>`+
+      `Минус софинансирование ${(c*100).toFixed(0)}% (−${fmtRub(prop*c)}) = ${fmtRub(sub)}.`;
+  }
+  const bdg=document.getElementById('badge');
+  if(bdg)bdg.textContent=`Бюджет ${fmtRub(B)} · расчётная субсидия ${fmtRub(sub)}`;
+}
+
 function recalc(){
   document.querySelectorAll('.opt').forEach(l=>{
     const sel=state[l.dataset.b].opt===l.dataset.o;
@@ -336,6 +383,7 @@ function recalc(){
         <span class="gain ${r.gain<0.05?'zero':''}">${r.gain<0.05?'максимум':'+'+r.gain.toFixed(2)+' б.'}</span></div>
       <div>${r.h.replace(/^[\d.]+\s*/,'')} — сейчас ${r.cur}/100</div>
     </div>`).join('');
+  finModel(total);
   save();
 }
 
@@ -343,7 +391,9 @@ const LSKEY='vr2_eval_v1';
 function save(){
   try{
     localStorage.setItem(LSKEY,JSON.stringify({
-      pname:document.getElementById('pname').value, state:state
+      pname:document.getElementById('pname').value, state:state,
+      fmBudget:document.getElementById('fmBudget').value,
+      fmThreshold:document.getElementById('fmThreshold').value
     }));
     const s=document.getElementById('saved');
     if(s){const d=new Date();
@@ -356,6 +406,8 @@ function load(){
   if(!raw)return;
   let d;try{d=JSON.parse(raw);}catch(e){return;}
   if(d.pname)document.getElementById('pname').value=d.pname;
+  if(d.fmBudget!=null&&d.fmBudget!=='')document.getElementById('fmBudget').value=d.fmBudget;
+  if(d.fmThreshold!=null&&d.fmThreshold!=='')document.getElementById('fmThreshold').value=d.fmThreshold;
   if(d.state)Object.keys(d.state).forEach(id=>{
     if(state[id]&&d.state[id]&&typeof d.state[id].val==='number'){
       state[id]={opt:d.state[id].opt,val:d.state[id].val};
@@ -372,9 +424,13 @@ function resetAll(){
     const inp=document.querySelector(`.opt[data-b="${b.id}"][data-o="${b.def}"] input`);
     if(inp)inp.checked=true;
   }));
+  document.getElementById('fmBudget').value=12062000;
+  document.getElementById('fmThreshold').value=60;
   recalc();
 }
 document.getElementById('pname').addEventListener('input',save);
+document.getElementById('fmBudget').addEventListener('input',recalc);
+document.getElementById('fmThreshold').addEventListener('input',recalc);
 load();
 recalc();
 </script>
