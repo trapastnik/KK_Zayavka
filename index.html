@@ -603,29 +603,29 @@ function finModel(score){
 // проверка закупаемых товаров, работ, услуг). k:0 — КП не требуются (ФОТ штата,
 // лицензионные авторские выплаты, регулируемые коммунальные тарифы).
 const LIM23=[
- {n:1, f:1.00, k:1, t:'Аренда территорий, помещений, сценических площадок; техническое обеспечение проведения мероприятий'},
- {n:2, f:1.00, k:1, t:'Сценические и другие конструкции (аренда, изготовление, монтаж, доставка, спецы, погрузка)'},
- {n:3, f:0.50, k:1, t:'Художественно-декорационное оформление территорий/помещений/площадок'},
- {n:4, f:0.40, k:1, t:'Свет/звук/видео-сопровождение, аренда тех. и технологического оборудования (до 70% — мультимедийный проект)'},
- {n:5, f:0.30, k:1, t:'Создание (съёмка, монтаж) видеоматериалов, в т.ч. в формате онлайн'},
- {n:6, f:0.20, k:1, t:'ТВ-съёмка/трансляция, интернет-платформа, художественная видеоверсия мероприятия'},
- {n:7, f:0.20, k:1, t:'Аренда/приобретение/изготовление костюмов, реквизита, бутафории'},
- {n:8, f:0.50, k:1, t:'Услуги артистов, творческих специалистов и участников творческих коллективов'},
- {n:9, f:0.50, k:1, t:'Проживание артистов (≤ 8 000 ₽/сутки/чел; ≤ «3 звезды», для МГН — «4 звезды»)'},
- {n:10,f:0.20, k:1, t:'Транспорт/трансфер артистов и творческих специалистов (эконом-класс)'},
- {n:11,f:0.15, k:1, t:'Режиссёрско-постановочная группа, кураторы, привлекаемые в связи с мероприятием (ГПХ)'},
- {n:12,f:0.05, k:1, t:'Админ.-хоз. персонал, иные специалисты (продвижение, реклама, дизайн, сбор информации) (ГПХ)'},
- {n:13,f:0.10, k:1, t:'Разработка/изготовление рекламных и информационных материалов (до 30% при тираже >100 000 экз.)'},
- {n:14,f:0.10, k:1, t:'Размещение рекламы, контекстная/таргетированная реклама в сети «Интернет»'},
- {n:15,f:0.01, k:1, t:'Услуги по проведению спецэффектов'},
- {n:16,f:0.05, k:1, t:'Приобретение/изготовление сувенирной (в т.ч. цветочной) продукции'},
- {n:17,f:0.15, k:1, t:'Создание/изготовление/приобретение призов победителям конкурсов (фестивалей)'},
- {n:18,f:0.15, k:1, t:'Безопасность, уборка, биотуалеты, дежурство бригад скорой помощи'},
- {n:19,f:0.01, k:1, t:'Расходные материалы (до 5% — выставочные проекты, мастер-классы)'},
- {n:20,f:0.02, k:0, t:'Вознаграждение за использование объектов авторских и смежных прав'},
- {n:21,f:0.05, k:0, t:'Оплата труда штатных работников получателя субсидии за период мероприятия'},
- {n:22,f:0.03, k:0, t:'Коммунальные расходы (электро-, тепло-, водоснабжение), связанные с мероприятием'},
- {n:23,f:0.03, k:1, t:'Услуги сурдо- и тифлопереводчиков'}
+ {n:1, f:1.00, k:1, s:'Аренда площадок, тех. обеспечение', t:'Аренда территорий, помещений, сценических площадок; техническое обеспечение проведения мероприятий'},
+ {n:2, f:1.00, k:1, s:'Сценические конструкции', t:'Сценические и другие конструкции (аренда, изготовление, монтаж, доставка, спецы, погрузка)'},
+ {n:3, f:0.50, k:1, s:'Худож.-декор. оформление', t:'Художественно-декорационное оформление территорий/помещений/площадок'},
+ {n:4, f:0.40, k:1, s:'Аренда тех./технол. оборудования', t:'Свет/звук/видео-сопровождение, аренда тех. и технологического оборудования (до 70% — мультимедийный проект)'},
+ {n:5, f:0.30, k:1, s:'Создание видеоматериалов (съёмка/монтаж)', t:'Создание (съёмка, монтаж) видеоматериалов, в т.ч. в формате онлайн'},
+ {n:6, f:0.20, k:1, s:'ТВ/онлайн-трансляция, видеоверсия', t:'ТВ-съёмка/трансляция, интернет-платформа, художественная видеоверсия мероприятия'},
+ {n:7, f:0.20, k:1, s:'Костюмы, реквизит, бутафория', t:'Аренда/приобретение/изготовление костюмов, реквизита, бутафории'},
+ {n:8, f:0.50, k:1, s:'Услуги артистов и творч. специалистов', t:'Услуги артистов, творческих специалистов и участников творческих коллективов'},
+ {n:9, f:0.50, k:1, s:'Проживание артистов', t:'Проживание артистов (≤ 8 000 ₽/сутки/чел; ≤ «3 звезды», для МГН — «4 звезды»)'},
+ {n:10,f:0.20, k:1, s:'Транспорт/трансфер артистов', t:'Транспорт/трансфер артистов и творческих специалистов (эконом-класс)'},
+ {n:11,f:0.15, k:1, s:'Режиссёрско-постановочная гр., кураторы', t:'Режиссёрско-постановочная группа, кураторы, привлекаемые в связи с мероприятием (ГПХ)'},
+ {n:12,f:0.05, k:1, s:'Админ.-хоз. персонал, продвижение', t:'Админ.-хоз. персонал, иные специалисты (продвижение, реклама, дизайн, сбор информации) (ГПХ)'},
+ {n:13,f:0.10, k:1, s:'Рекламные/информац. материалы', t:'Разработка/изготовление рекламных и информационных материалов (до 30% при тираже >100 000 экз.)'},
+ {n:14,f:0.10, k:1, s:'Размещение рекламы, интернет-таргет', t:'Размещение рекламы, контекстная/таргетированная реклама в сети «Интернет»'},
+ {n:15,f:0.01, k:1, s:'Спецэффекты', t:'Услуги по проведению спецэффектов'},
+ {n:16,f:0.05, k:1, s:'Сувенирная продукция', t:'Приобретение/изготовление сувенирной (в т.ч. цветочной) продукции'},
+ {n:17,f:0.15, k:1, s:'Призы победителям', t:'Создание/изготовление/приобретение призов победителям конкурсов (фестивалей)'},
+ {n:18,f:0.15, k:1, s:'Безопасность, уборка, дежурство', t:'Безопасность, уборка, биотуалеты, дежурство бригад скорой помощи'},
+ {n:19,f:0.01, k:1, s:'Расходные материалы', t:'Расходные материалы (до 5% — выставочные проекты, мастер-классы)'},
+ {n:20,f:0.02, k:0, s:'Авторские и смежные права', t:'Вознаграждение за использование объектов авторских и смежных прав'},
+ {n:21,f:0.05, k:0, s:'ФОТ штатных работников', t:'Оплата труда штатных работников получателя субсидии за период мероприятия'},
+ {n:22,f:0.03, k:0, s:'Коммунальные расходы', t:'Коммунальные расходы (электро-, тепло-, водоснабжение), связанные с мероприятием'},
+ {n:23,f:0.03, k:1, s:'Сурдо-/тифлоперевод', t:'Услуги сурдо- и тифлопереводчиков'}
 ];
 const BUILD_DEF={
  1 :{sum:700000,  d:'Аренда/использование площадок 6 библиотек + техническое обеспечение точек показа (электрика, подготовка и монтаж зон показа)'},
@@ -728,23 +728,29 @@ function recalcBuild(){
 }
 /* ===== ДЕТАЛЬНЫЙ БЮДЖЕТ + ГЕНЕРАТОР КП ===== */
 const DTL_DEF=[
- {g:'Производство собственного VR-контента (количества — из финмодели)', tk:null, rows:[
-   {name:'VR-фильм большой формат (оркестр Капеллы; орган с интерактивом регистров) — многокамерная 360°-съёмка, стич, постпрод, программирование интерактива',unit:'фильм',qty:3,rate:760000,dir:5},
-   {name:'VR-фильм средний формат (хор Капеллы; мастер-класс ИКП; отчётный концерт)',unit:'фильм',qty:5,rate:420000,dir:5},
-   {name:'VR-фильм малый формат (экскурсии по Капелле и Маяковке; формат «Кулисы»)',unit:'фильм',qty:7,rate:210000,dir:5},
-   {name:'Гонорары артистов и творческих специалистов в съёмках (худож.-постановщик иммерс. сцены, саунд-дизайн, перформеры) — переносимая часть',unit:'усл.',qty:1,rate:0,dir:8},
-   {name:'Накладные по контенту: лицензии на музыку, согласования авторских/смежных прав',unit:'усл.',qty:1,rate:99000,dir:20}]},
- {g:'Аренда VR-инфраструктуры (оборудование + уникальное ПО + лицензионный контент)', tk:null, rows:[
+ {g:'Производство собственного VR-контента (15 фильмов: 3 больших / 5 средних / 7 малых — кол-ва из финмодели)', tk:null, rows:[
+   {name:'Режиссёрско-постановочная работа (режиссёр VR, постановщик, сценарии) — на 15 фильмов',unit:'фильм',qty:15,rate:60000,dir:11},
+   {name:'Операторская съёмочная группа 360° (смены, без аренды камеры — см. блок «Аренда»)',unit:'смена',qty:30,rate:35000,dir:5},
+   {name:'Стич/сборка 360° и видеомонтаж',unit:'фильм',qty:15,rate:70000,dir:5},
+   {name:'Цветокоррекция, мастеринг',unit:'фильм',qty:15,rate:18000,dir:5},
+   {name:'Саунд-дизайн, запись и сведение звука',unit:'фильм',qty:15,rate:22000,dir:5},
+   {name:'Программирование интерактива (орган с регистрами, навигация)',unit:'сложн. фильм',qty:2,rate:250000,dir:5},
+   {name:'Компьютерная графика, титры, оформление кадра',unit:'фильм',qty:15,rate:20000,dir:5},
+   {name:'Гонорары артистов и творческих специалистов в съёмках (худож.-постановщик иммерс. сцены, перформеры)',unit:'усл.',qty:1,rate:450000,dir:8},
+   {name:'Лицензии на музыку и смежные права, согласования',unit:'усл.',qty:1,rate:99000,dir:20}]},
+ {g:'Аренда VR-инфраструктуры и съёмочного оборудования (оборудование + уникальное ПО + лицензионный контент)', tk:null, rows:[
+   {name:'Аренда камеры/риг 360° для съёмок VR-контента',unit:'съём. день',qty:15,rate:60000,dir:4},
    {name:'Аренда VR-шлемов Pico 4 + комплекты управления (планшеты, Wi-Fi-роутеры, зарядные станции, кейсы)',unit:'шлем·период',qty:35,rate:60000,dir:4},
    {name:'Лицензия уникального ПО управления парком VR и сценариями групповых показов (консоль, аналитика, дистрибуция)',unit:'лиц.·период',qty:1,rate:700000,dir:4},
-   {name:'Лицензионная медиатека VR-контента (~39 ед.: VR360-фильмы, экскурсии, образовательные квизы, 3D-модели, VR-игры)',unit:'пакет',qty:1,rate:500000,dir:4},
+   {name:'Лицензионная медиатека VR-контента (~39 ед.: VR360-фильмы, экскурсии, квизы, 3D-модели, VR-игры)',unit:'пакет',qty:1,rate:500000,dir:4},
    {name:'Пуско-наладка, обучение персонала библиотек, техническое сопровождение на весь период',unit:'усл.',qty:1,rate:200000,dir:4}]},
- {g:'Персонал по договорам ГПХ (режиссёрско-постановочная группа, кураторы)', tk:'gph', tdir:11, rows:[
-   {name:'Режиссёр VR-постановок',unit:'чел·мес',qty:4,rate:90000,dir:11},
-   {name:'Постановщик / сценарист',unit:'чел·мес',qty:4,rate:60000,dir:11},
+ {g:'Персонал по договорам ГПХ (физлица) — кураторы, координаторы', tk:'gph', tdir:11, rows:[
    {name:'Куратор VR-десанта',unit:'чел·мес',qty:4,rate:50000,dir:11},
    {name:'Координатор по партнёрам и площадкам',unit:'чел·мес',qty:4,rate:40000,dir:11},
    {name:'Кураторы-медиаторы точек показа (6 точек × 4 мес)',unit:'чел·мес',qty:24,rate:40000,dir:11}]},
+ {g:'Персонал — ИП (договоры возмездного оказания услуг; страховые взносы НКО не начисляет)', tk:'ip', tdir:11, rows:[
+   {name:'Режиссёр-постановщик VR (ИП) — при оформлении через ИП вместо ГПХ',unit:'усл.',qty:1,rate:0,dir:11},
+   {name:'Иной творческий специалист — ИП (по необходимости)',unit:'усл.',qty:1,rate:0,dir:8}]},
  {g:'Персонал — штат НКО (трудовые договоры)', tk:'staff', tdir:21, rows:[
    {name:'Директор НКО (часть занятости по мероприятию)',unit:'чел·мес',qty:4,rate:50000,dir:21},
    {name:'Бухгалтер НКО (учёт целевого расходования субсидии)',unit:'чел·мес',qty:4,rate:30000,dir:21},
@@ -765,33 +771,39 @@ const DTL_DEF=[
 let dtl=JSON.parse(JSON.stringify(DTL_DEF));
 function dtaxRates(){
   const v=(document.querySelector('input[name="dtax"]:checked')||{}).value||'common';
-  if(v==='lgota')return{gph:0.076,staff:0.076,n:'льготный НКО 7,6%'};
-  if(v==='msp')return{gph:0.15,staff:0.15,n:'МСП ≈15%'};
-  return{gph:0.30,staff:0.302,n:'общий 30% + 0,2%'};
+  if(v==='lgota')return{gph:0.076,staff:0.076,ip:0,n:'льготный НКО 7,6%'};
+  if(v==='msp')return{gph:0.15,staff:0.15,ip:0,n:'МСП ≈15%'};
+  return{gph:0.30,staff:0.302,ip:0,n:'общий 30% + 0,2%'};
 }
-function dirLabel(n){const L=LIM23.find(x=>x.n===n);return L?('п.'+n+' · ≤'+(L.f*100).toFixed(0)+'%'):('п.'+n);}
+const TKN={gph:'ГПХ',staff:'штат',ip:'ИП'};
+function dirLabel(n){const L=LIM23.find(x=>x.n===n);return L?('п.'+n+' ≤'+(L.f*100).toFixed(0)+'% — '+L.s):('п.'+n);}
 function renderDetail(){
   const el=document.getElementById('dtlTable');if(!el)return;
-  let h='<tr><th>Наименование</th><th class="r">Ед.</th><th class="r">Кол-во</th>'+
-    '<th class="r">Ставка, ₽</th><th class="r">Сумма, ₽</th><th>Напр. № 189</th><th>Действия</th></tr>';
+  let h='<tr><th class="r" style="width:46px">№</th><th>Наименование</th><th class="r">Ед.</th><th class="r">Кол-во</th>'+
+    '<th class="r">Ставка, ₽</th><th class="r">Сумма, ₽</th><th>Напр. № 189 (направление · лимит)</th><th>Действия</th></tr>';
   dtl.forEach((G,gi)=>{
-    h+=`<tr class="tot"><td colspan="7">${G.g}${G.tk?` · взносы: ${G.tk==='gph'?'ГПХ':'штат'}`:''}</td></tr>`;
+    const tkL=G.tk?(G.tk==='ip'?' · взносы: ИП (НКО не начисляет)':` · взносы: ${TKN[G.tk]}`):'';
+    h+=`<tr class="tot"><td colspan="8">Блок ${gi+1}. ${G.g}${tkL}</td></tr>`;
     G.rows.forEach((r,ri)=>{
       const dirOpts=LIM23.map(L=>`<option value="${L.n}"${L.n===r.dir?' selected':''}>${dirLabel(L.n)}</option>`).join('');
       const kp=(LIM23.find(x=>x.n===r.dir)||{}).k;
       h+=`<tr>
-        <td class="desc"><textarea id="dn_${gi}_${ri}" rows="2">${(r.name||'').replace(/&/g,'&amp;').replace(/</g,'&lt;')}</textarea></td>
-        <td class="r"><input type="text" id="du_${gi}_${ri}" value="${(r.unit||'').replace(/"/g,'&quot;')}" style="width:80px"></td>
-        <td class="r"><input type="text" inputmode="numeric" id="dq_${gi}_${ri}" value="${(r.qty||0).toLocaleString('ru-RU')}" style="width:70px"></td>
-        <td class="r"><input type="text" inputmode="numeric" id="dr_${gi}_${ri}" value="${(Math.round(r.rate)||0).toLocaleString('ru-RU')}" style="width:110px"></td>
+        <td class="r" style="font-weight:700;color:var(--mut)">${gi+1}.${ri+1}</td>
+        <td class="desc"><textarea id="dn_${gi}_${ri}" rows="3" style="width:230px">${(r.name||'').replace(/&/g,'&amp;').replace(/</g,'&lt;')}</textarea></td>
+        <td class="r"><input type="text" id="du_${gi}_${ri}" value="${(r.unit||'').replace(/"/g,'&quot;')}" style="width:78px"></td>
+        <td class="r"><input type="text" inputmode="numeric" id="dq_${gi}_${ri}" value="${(r.qty||0).toLocaleString('ru-RU')}" style="width:64px"></td>
+        <td class="r"><input type="text" inputmode="numeric" id="dr_${gi}_${ri}" value="${(Math.round(r.rate)||0).toLocaleString('ru-RU')}" style="width:104px"></td>
         <td class="r" id="ds_${gi}_${ri}" style="font-weight:700">—</td>
-        <td><select id="dd_${gi}_${ri}" style="max-width:150px">${dirOpts}</select></td>
+        <td class="dir"><select id="dd_${gi}_${ri}" style="width:230px;max-width:230px;white-space:normal">${dirOpts}</select></td>
         <td style="white-space:nowrap">${kp?`<button type="button" onclick="genKP(${gi},${ri})" style="border:1px solid var(--blue);background:var(--blue-soft);color:var(--blue);border-radius:6px;padding:3px 9px;font-size:11px;font-weight:700;cursor:pointer">КП</button> `:''}<button type="button" onclick="delDtl(${gi},${ri})" title="удалить" style="border:1px solid var(--line);background:#fff;border-radius:6px;padding:3px 8px;font-size:11px;cursor:pointer;color:var(--red)">✕</button></td></tr>`;
     });
-    if(G.tk) h+=`<tr><td colspan="4" style="color:var(--mut)">Страховые взносы (${G.tk==='gph'?'ГПХ':'штат'}) — <span id="dtrate_${gi}">—</span></td><td class="r" id="dtax_${gi}" style="font-weight:700">—</td><td>${dirLabel(G.tdir)}</td><td></td></tr>`;
-    h+=`<tr><td colspan="7"><button type="button" onclick="addDtl(${gi})" style="border:1px dashed #94a3b8;background:#fff;border-radius:7px;padding:5px 12px;font-size:12px;cursor:pointer;color:#475569">+ добавить строку в «${G.g.slice(0,40)}…»</button> <span style="color:var(--mut);font-size:12px">подытог группы: <b id="dsub_${gi}">—</b></span></td></tr>`;
+    if(G.tk){
+      const lbl=G.tk==='ip'?'Страховые взносы (ИП) — НКО не начисляет':`Страховые взносы (${TKN[G.tk]})`;
+      h+=`<tr><td class="r" style="color:var(--mut)">${gi+1}.н</td><td colspan="4" style="color:var(--mut)">${lbl} — <span id="dtrate_${gi}">—</span></td><td class="r" id="dtax_${gi}" style="font-weight:700">—</td><td class="dir">${dirLabel(G.tdir)}</td><td></td></tr>`;
+    }
+    h+=`<tr><td></td><td colspan="7"><button type="button" onclick="addDtl(${gi})" style="border:1px dashed #94a3b8;background:#fff;border-radius:7px;padding:5px 12px;font-size:12px;cursor:pointer;color:#475569">+ добавить строку в Блок ${gi+1}</button> <span style="color:var(--mut);font-size:12px">подытог блока: <b id="dsub_${gi}">—</b></span></td></tr>`;
   });
-  h+=`<tr class="tot"><td>ИТОГО смета (S)</td><td></td><td></td><td></td><td class="r" id="dGrand">—</td><td colspan="2"></td></tr>`;
+  h+=`<tr class="tot"><td></td><td>ИТОГО смета (S)</td><td></td><td></td><td></td><td class="r" id="dGrand">—</td><td colspan="2"></td></tr>`;
   el.className='sm';el.innerHTML=h;
   dtl.forEach((G,gi)=>G.rows.forEach((r,ri)=>{
     const bind=(id,prop,numeric)=>{const e=document.getElementById(id+'_'+gi+'_'+ri);if(!e)return;
@@ -817,9 +829,10 @@ function recalcDetail(){
       byDir[r.dir]=(byDir[r.dir]||0)+s;
     });
     if(G.tk){
-      const rate=R[G.tk], tax=sub*rate;
+      const rate=R[G.tk]||0, tax=sub*rate;
       const te=document.getElementById('dtax_'+gi);if(te)te.textContent=fmtRub(tax);
-      const tr=document.getElementById('dtrate_'+gi);if(tr)tr.textContent=(rate*100).toFixed(1).replace('.',',')+'% ('+R.n+')';
+      const tr=document.getElementById('dtrate_'+gi);
+      if(tr)tr.textContent=G.tk==='ip'?'0% (ИП платит налоги самостоятельно)':((rate*100).toFixed(1).replace('.',',')+'% ('+R.n+')');
       byDir[G.tdir]=(byDir[G.tdir]||0)+tax;
       sub+=tax;
     }
@@ -903,7 +916,10 @@ function openKPList(){
    <div class="sub">На каждый лот — 3 КП с разбивкой по позициям. Наша сметная цена лота = средняя из трёх (±10%).</div>
    ${_lots.map((lot,idx)=>`<div style="border:1px solid var(--line);border-radius:10px;padding:11px;margin:8px 0;display:flex;justify-content:space-between;align-items:center;gap:10px">
      <div><b>${esc(lot.title.slice(0,80))}</b><div style="color:var(--mut);font-size:12px">${lot.items.length} поз. · итого ${fmtRub(lot.total)}</div></div>
-     <button onclick="showLotKP(${idx})" style="border:1px solid var(--blue);background:var(--blue);color:#fff;border-radius:7px;padding:6px 12px;font-weight:600;cursor:pointer">3 КП</button></div>`).join('')}
+     <div style="display:flex;gap:6px;white-space:nowrap">
+       <button onclick="showLotKP(${idx})" style="border:1px solid var(--blue);background:var(--blue);color:#fff;border-radius:7px;padding:6px 12px;font-weight:600;cursor:pointer">3 КП</button>
+       <button onclick="dlLotByIdx(${idx})" title="Скачать 3 КП этой статьи одним .doc" style="border:1px solid var(--blue);background:#fff;color:var(--blue);border-radius:7px;padding:6px 12px;font-weight:600;cursor:pointer">↓ .doc</button>
+     </div></div>`).join('')}
    <button onclick="dlAllKP()" style="border:1px solid var(--blue);background:var(--blue);color:#fff;border-radius:8px;padding:9px 14px;font-weight:600;cursor:pointer;margin-top:8px">Скачать ВСЕ КП по лотам одним .doc</button>`;
   document.getElementById('kpModalWrap').style.display='';
 }
@@ -944,6 +960,7 @@ function cpKP(i){const t=document.getElementById('kptxt_'+i);if(!t)return;t.sele
 function _dl(name,bodyHtml){
   const blob=new Blob(['﻿<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="utf-8"></head><body>'+bodyHtml+'</body></html>'],{type:'application/msword'});
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();a.remove();}
+function dlLotByIdx(idx){if(!_lots.length)_lots=kpLots();_lotIdx=idx;dlLotKP('all');}
 function dlLotKP(which){
   const lot=_lots[_lotIdx];if(!lot)return;const P=kpPrices(lot.total);
   if(which==='all'){let b='';[0,1,2].forEach(i=>{b+=lotKpHtml(i,lot,P[i])+'<p style="page-break-after:always"></p>';});_dl('КП_лот_3шт.doc',b);return;}
