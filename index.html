@@ -155,6 +155,7 @@
   <button id="tabBtnEval" class="active" onclick="showTab('eval')">Критерии оценки</button>
   <button id="tabBtnSmeta" onclick="showTab('smeta')">Смета и лимиты</button>
   <button id="tabBtnBuild" onclick="showTab('build')">Конструктор бюджета</button>
+  <button id="tabBtnDetail" onclick="showTab('detail')">Детальный бюджет + КП</button>
 </div>
 <div id="evalView">
 <div class="wrap">
@@ -246,6 +247,35 @@
     <div class="bldscroll"><table class="sm bld" id="bldTable"></table></div>
     <div class="sub" style="margin-top:12px">Лимиты с вариативом: п.4 — до 70 % для мультимедийного проекта; п.13 — до 30 % при тираже одного наименования &gt; 100 000 экз.; п.19 — до 5 % для выставок/мастер-классов. В расчёте взят базовый %.</div>
     <div class="sub" style="margin-top:6px"><b>⚑ КП:</b> по статьям с меткой нужно приложить мониторинг цен — <b>не менее 3 коммерческих предложений</b> поставщиков (п. 8.3 № 189: Комитет сверяет смету с рынком). КП не требуются по п.20 (авторские/смежные права — лицензионные выплаты правообладателю), п.21 (ФОТ штатных работников по штатному расписанию), п.22 (регулируемые коммунальные тарифы). Отсутствие/слабость обоснования бьёт по критерию 4.3.</div>
+  </div>
+</div>
+
+<div id="detailView" class="smeta-wrap" style="display:none">
+  <div class="sm-card">
+    <h2>Детальный бюджет (кол-во × ставка) и генератор КП</h2>
+    <div class="sub">Подробная смета по строкам. Кол-во и ставку можно менять, сумма считается. Строки добавляются/удаляются. Налоги (страховые взносы) считаются автоматически по выбранной схеме; ГПХ и штат — по-разному. По каждой закупочной строке — кнопка «КП»: 3 коммерческих предложения (наша цена = средняя, разброс ±10%), текст для копирования и выгрузка в Word.</div>
+    <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;font-size:13px;margin:0 0 14px;padding:12px 14px;background:#f8fafc;border:1px solid var(--line);border-radius:10px">
+      <span><b>Схема страховых взносов:</b></span>
+      <label style="display:flex;gap:6px;cursor:pointer"><input type="radio" name="dtax" value="common" checked> Общий 30% + 0,2% (штат)</label>
+      <label style="display:flex;gap:6px;cursor:pointer"><input type="radio" name="dtax" value="msp"> МСП ≈15% (упрощённо)</label>
+      <label style="display:flex;gap:6px;cursor:pointer"><input type="radio" name="dtax" value="lgota"> Льготный НКО 7,6%</label>
+      <span style="color:var(--mut)">НДФЛ 13% — удерживается из выплаты (справочно, не плюсуется)</span>
+    </div>
+    <div class="sm-out" style="margin:0 0 14px">
+      <div class="box hl"><div class="v" id="dTot">0 ₽</div><div class="k">Итого смета (S)</div></div>
+      <div class="box"><div class="v" id="dElig">0 ₽</div><div class="k">S<sub>годная</sub> (в лимитах № 189)</div></div>
+      <div class="box"><div class="v" id="dOver">0</div><div class="k">направлений с превышением</div></div>
+      <div class="box"><div class="v" id="dVcalc">0 ₽</div><div class="k">V<sub>расчёт</sub> (балл — из «Критериев»)</div></div>
+    </div>
+    <div class="bldscroll"><table class="sm bld" id="dtlTable"></table></div>
+    <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
+      <button class="print" style="border:1px solid var(--blue);background:var(--blue);color:#fff;border-radius:9px;padding:9px 14px;font-weight:600;cursor:pointer" onclick="dlAllKP()">Скачать ВСЕ КП одним файлом (.doc)</button>
+      <button style="border:1px solid var(--line);background:#fff;border-radius:9px;padding:9px 14px;font-weight:600;cursor:pointer;color:#475569" onclick="dlSmetaDoc()">Скачать смету (.doc)</button>
+    </div>
+    <div class="sub" style="margin-top:10px">Контрагент/реквизиты в КП — заглушки <code>[…]</code>: подставляются при переносе на бланк поставщика. Цены округлены; наша сметная цена строки = средняя из трёх КП (п. 8.3 № 189). Налоги — упрощённый единый эффективный %; для МСП фактически 30% до 1,5 МРОТ и 15% свыше (взят 15%).</div>
+  </div>
+  <div id="kpModalWrap" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:50;padding:30px;overflow:auto" onclick="if(event.target===this)closeKP()">
+    <div style="max-width:900px;margin:0 auto;background:#fff;border-radius:14px;padding:24px" id="kpModal"></div>
   </div>
 </div>
 
@@ -689,9 +719,229 @@ function recalcBuild(){
   g('bScoreUsed',sc.toFixed(1)+(useCustom?' (произвольный)':' (из «Критериев»)')+(sc<T?` — ниже порога ${T}, V=0`:''));
   window.__bSum=S;window.__bElig=elig;
 }
+/* ===== ДЕТАЛЬНЫЙ БЮДЖЕТ + ГЕНЕРАТОР КП ===== */
+const DTL_DEF=[
+ {g:'Производство собственного VR-контента (количества — из финмодели)', tk:null, rows:[
+   {name:'VR-фильм большой формат (оркестр Капеллы; орган с интерактивом регистров) — многокамерная 360°-съёмка, стич, постпрод, программирование интерактива',unit:'фильм',qty:3,rate:760000,dir:5},
+   {name:'VR-фильм средний формат (хор Капеллы; мастер-класс ИКП; отчётный концерт)',unit:'фильм',qty:5,rate:420000,dir:5},
+   {name:'VR-фильм малый формат (экскурсии по Капелле и Маяковке; формат «Кулисы»)',unit:'фильм',qty:7,rate:210000,dir:5},
+   {name:'Гонорары артистов и творческих специалистов в съёмках (худож.-постановщик иммерс. сцены, саунд-дизайн, перформеры) — переносимая часть',unit:'усл.',qty:1,rate:0,dir:8},
+   {name:'Накладные по контенту: лицензии на музыку, согласования авторских/смежных прав',unit:'усл.',qty:1,rate:99000,dir:20}]},
+ {g:'Аренда VR-инфраструктуры (оборудование + уникальное ПО + лицензионный контент)', tk:null, rows:[
+   {name:'Аренда VR-шлемов Pico 4 + комплекты управления (планшеты, Wi-Fi-роутеры, зарядные станции, кейсы)',unit:'шлем·период',qty:35,rate:60000,dir:4},
+   {name:'Лицензия уникального ПО управления парком VR и сценариями групповых показов (консоль, аналитика, дистрибуция)',unit:'лиц.·период',qty:1,rate:700000,dir:4},
+   {name:'Лицензионная медиатека VR-контента (~39 ед.: VR360-фильмы, экскурсии, образовательные квизы, 3D-модели, VR-игры)',unit:'пакет',qty:1,rate:500000,dir:4},
+   {name:'Пуско-наладка, обучение персонала библиотек, техническое сопровождение на весь период',unit:'усл.',qty:1,rate:200000,dir:4}]},
+ {g:'Персонал по договорам ГПХ (режиссёрско-постановочная группа, кураторы)', tk:'gph', tdir:11, rows:[
+   {name:'Режиссёр VR-постановок',unit:'чел·мес',qty:4,rate:90000,dir:11},
+   {name:'Постановщик / сценарист',unit:'чел·мес',qty:4,rate:60000,dir:11},
+   {name:'Куратор VR-десанта',unit:'чел·мес',qty:4,rate:50000,dir:11},
+   {name:'Координатор по партнёрам и площадкам',unit:'чел·мес',qty:4,rate:40000,dir:11},
+   {name:'Кураторы-медиаторы точек показа (6 точек × 4 мес)',unit:'чел·мес',qty:24,rate:40000,dir:11}]},
+ {g:'Персонал — штат НКО (трудовые договоры)', tk:'staff', tdir:21, rows:[
+   {name:'Директор НКО (часть занятости по мероприятию)',unit:'чел·мес',qty:4,rate:50000,dir:21},
+   {name:'Бухгалтер НКО (учёт целевого расходования субсидии)',unit:'чел·мес',qty:4,rate:30000,dir:21},
+   {name:'Руководитель проекта',unit:'чел·мес',qty:4,rate:70000,dir:21}]},
+ {g:'Маркетинг, реклама, продвижение', tk:null, rows:[
+   {name:'Промо-ролик 30 сек (по точкам/форматам)',unit:'ролик',qty:6,rate:40000,dir:13},
+   {name:'Лендинг/сайт проекта (расписание, карта точек, каталог)',unit:'усл.',qty:1,rate:200000,dir:13},
+   {name:'Печатная/полиграфическая продукция (афиши, флаеры, буклеты, QR)',unit:'усл.',qty:1,rate:160000,dir:13},
+   {name:'Контекстная/таргетированная реклама в сети «Интернет»',unit:'мес',qty:4,rate:100000,dir:14},
+   {name:'Посевы у блогеров/лидеров мнений',unit:'публ.',qty:8,rate:25000,dir:14}]},
+ {g:'Площадки, оформление, онлайн, обеспечение', tk:null, rows:[
+   {name:'Аренда/использование площадок 6 библиотек + техническое обеспечение точек показа (электрика, подготовка и монтаж зон)',unit:'точка',qty:6,rate:120000,dir:1},
+   {name:'Художественно-декорационное оформление иммерсивных VR-зон',unit:'точка',qty:6,rate:85000,dir:3},
+   {name:'Онлайн-трансляции и художественные видеоверсии для интернет-показа',unit:'усл.',qty:1,rate:600000,dir:6},
+   {name:'Санитарно-гигиеническое обеспечение и уборка точек, дежурство',unit:'точка·мес',qty:24,rate:13000,dir:18},
+   {name:'Расходные материалы (гигиена оптики шлемов, канцелярия)',unit:'усл.',qty:1,rate:140000,dir:19}]}
+];
+let dtl=JSON.parse(JSON.stringify(DTL_DEF));
+function dtaxRates(){
+  const v=(document.querySelector('input[name="dtax"]:checked')||{}).value||'common';
+  if(v==='lgota')return{gph:0.076,staff:0.076,n:'льготный НКО 7,6%'};
+  if(v==='msp')return{gph:0.15,staff:0.15,n:'МСП ≈15%'};
+  return{gph:0.30,staff:0.302,n:'общий 30% + 0,2%'};
+}
+function dirLabel(n){const L=LIM23.find(x=>x.n===n);return L?('п.'+n+' · ≤'+(L.f*100).toFixed(0)+'%'):('п.'+n);}
+function renderDetail(){
+  const el=document.getElementById('dtlTable');if(!el)return;
+  let h='<tr><th>Наименование</th><th class="r">Ед.</th><th class="r">Кол-во</th>'+
+    '<th class="r">Ставка, ₽</th><th class="r">Сумма, ₽</th><th>Напр. № 189</th><th>Действия</th></tr>';
+  dtl.forEach((G,gi)=>{
+    h+=`<tr class="tot"><td colspan="7">${G.g}${G.tk?` · взносы: ${G.tk==='gph'?'ГПХ':'штат'}`:''}</td></tr>`;
+    G.rows.forEach((r,ri)=>{
+      const dirOpts=LIM23.map(L=>`<option value="${L.n}"${L.n===r.dir?' selected':''}>${dirLabel(L.n)}</option>`).join('');
+      const kp=(LIM23.find(x=>x.n===r.dir)||{}).k;
+      h+=`<tr>
+        <td class="desc"><textarea id="dn_${gi}_${ri}" rows="2">${(r.name||'').replace(/&/g,'&amp;').replace(/</g,'&lt;')}</textarea></td>
+        <td class="r"><input type="text" id="du_${gi}_${ri}" value="${(r.unit||'').replace(/"/g,'&quot;')}" style="width:80px"></td>
+        <td class="r"><input type="text" inputmode="numeric" id="dq_${gi}_${ri}" value="${(r.qty||0).toLocaleString('ru-RU')}" style="width:70px"></td>
+        <td class="r"><input type="text" inputmode="numeric" id="dr_${gi}_${ri}" value="${(Math.round(r.rate)||0).toLocaleString('ru-RU')}" style="width:110px"></td>
+        <td class="r" id="ds_${gi}_${ri}" style="font-weight:700">—</td>
+        <td><select id="dd_${gi}_${ri}" style="max-width:150px">${dirOpts}</select></td>
+        <td style="white-space:nowrap">${kp?`<button type="button" onclick="genKP(${gi},${ri})" style="border:1px solid var(--blue);background:var(--blue-soft);color:var(--blue);border-radius:6px;padding:3px 9px;font-size:11px;font-weight:700;cursor:pointer">КП</button> `:''}<button type="button" onclick="delDtl(${gi},${ri})" title="удалить" style="border:1px solid var(--line);background:#fff;border-radius:6px;padding:3px 8px;font-size:11px;cursor:pointer;color:var(--red)">✕</button></td></tr>`;
+    });
+    if(G.tk) h+=`<tr><td colspan="4" style="color:var(--mut)">Страховые взносы (${G.tk==='gph'?'ГПХ':'штат'}) — <span id="dtrate_${gi}">—</span></td><td class="r" id="dtax_${gi}" style="font-weight:700">—</td><td>${dirLabel(G.tdir)}</td><td></td></tr>`;
+    h+=`<tr><td colspan="7"><button type="button" onclick="addDtl(${gi})" style="border:1px dashed #94a3b8;background:#fff;border-radius:7px;padding:5px 12px;font-size:12px;cursor:pointer;color:#475569">+ добавить строку в «${G.g.slice(0,40)}…»</button> <span style="color:var(--mut);font-size:12px">подытог группы: <b id="dsub_${gi}">—</b></span></td></tr>`;
+  });
+  h+=`<tr class="tot"><td>ИТОГО смета (S)</td><td></td><td></td><td></td><td class="r" id="dGrand">—</td><td colspan="2"></td></tr>`;
+  el.className='sm';el.innerHTML=h;
+  dtl.forEach((G,gi)=>G.rows.forEach((r,ri)=>{
+    const bind=(id,prop,numeric)=>{const e=document.getElementById(id+'_'+gi+'_'+ri);if(!e)return;
+      e.addEventListener('input',()=>{
+        if(numeric){r[prop]=+(e.value.replace(/\D/g,''))||0;e.value=(r[prop]).toLocaleString('ru-RU');}
+        else r[prop]=e.value;
+        recalc();});};
+    bind('dn','name',false);bind('du','unit',false);bind('dq','qty',true);bind('dr','rate',true);
+    const dd=document.getElementById('dd_'+gi+'_'+ri);
+    if(dd)dd.addEventListener('change',()=>{r.dir=+dd.value;renderDetail();recalc();});
+  }));
+  document.querySelectorAll('input[name="dtax"]').forEach(x=>x.addEventListener('change',recalc));
+}
+function addDtl(gi){dtl[gi].rows.push({name:'Новая статья',unit:'усл.',qty:1,rate:0,dir:1});renderDetail();recalc();}
+function delDtl(gi,ri){dtl[gi].rows.splice(ri,1);renderDetail();recalc();}
+function recalcDetail(){
+  const R=dtaxRates();let grand=0;const byDir={};
+  dtl.forEach((G,gi)=>{
+    let sub=0;
+    G.rows.forEach((r,ri)=>{
+      const s=(+r.qty||0)*(+r.rate||0);sub+=s;
+      const se=document.getElementById('ds_'+gi+'_'+ri);if(se)se.textContent=fmtRub(s);
+      byDir[r.dir]=(byDir[r.dir]||0)+s;
+    });
+    if(G.tk){
+      const rate=R[G.tk], tax=sub*rate;
+      const te=document.getElementById('dtax_'+gi);if(te)te.textContent=fmtRub(tax);
+      const tr=document.getElementById('dtrate_'+gi);if(tr)tr.textContent=(rate*100).toFixed(1).replace('.',',')+'% ('+R.n+')';
+      byDir[G.tdir]=(byDir[G.tdir]||0)+tax;
+      sub+=tax;
+    }
+    const sb=document.getElementById('dsub_'+gi);if(sb)sb.textContent=fmtRub(sub);
+    grand+=sub;
+  });
+  let elig=0,over=0;
+  Object.keys(byDir).forEach(n=>{
+    const L=LIM23.find(x=>x.n===+n);if(!L)return;
+    const cap=L.f*grand, sp=byDir[n];
+    elig+=Math.min(sp,cap); if(sp>cap+0.5)over++;
+  });
+  const g=(id,v)=>{const x=document.getElementById(id);if(x)x.textContent=v;};
+  g('dGrand',fmtRub(grand));g('dTot',fmtRub(grand));g('dElig',fmtRub(elig));
+  const ov=document.getElementById('dOver');if(ov){ov.textContent=over;ov.style.color=over?'var(--red)':'var(--green)';}
+  let T=parseFloat(document.getElementById('fmThreshold').value);if(isNaN(T))T=0;
+  const sc=window.__score||0, V=(sc<T?0:elig*sc/100);
+  g('dVcalc',fmtRub(V));
+  window.__dGrand=grand;window.__dElig=elig;
+}
+/* --- КП --- */
+function kpPrices(X){
+  X=Math.round(X);
+  const a=Math.round(X*0.90/1000)*1000, c=Math.round(X*1.10/1000)*1000;
+  let b=3*X-a-c; b=Math.round(b/1000)*1000;            // среднее трёх ≈ X
+  return [a,b,c];
+}
+const KP_SUP=[
+ {n:'ООО «[Наименование поставщика 1]»',ph:'Настоящим направляем коммерческое предложение на выполнение работ (оказание услуг):',out:'Цены действительны 30 календарных дней. Оплата по факту, НДС не облагается (УСН).'},
+ {n:'ООО «[Наименование поставщика 2]»',ph:'В ответ на Ваш запрос сообщаем стоимость поставки товаров/работ/услуг по позиции:',out:'Срок выполнения — согласно календарному плану. Предложение носит коммерческий характер, действует 30 дней.'},
+ {n:'ИП [ФИО / Наименование поставщика 3]',ph:'Предлагаем к рассмотрению нашу цену по предмету закупки:',out:'Гарантия качества. Стоимость окончательная, действительна в течение месяца с даты составления.'}
+];
+function kpHtml(stat,desc,unit,qty,price){
+  const total=price*(qty||1);
+  return KP_SUP.map((s,i)=>`
+   <div style="page-break-after:always;font-family:'Times New Roman',serif;font-size:13pt">
+    <p style="text-align:right">[Бланк организации: ${s.n}]<br>[ИНН/КПП, адрес, тел., e-mail]</p>
+    <p style="text-align:right">Исх. № [___] от «[__]» [_____] 2026 г.</p>
+    <p style="text-align:center;font-weight:bold;font-size:14pt">КОММЕРЧЕСКОЕ ПРЕДЛОЖЕНИЕ</p>
+    <p>Кому: [Наименование организации-заявителя], для участия в отборе на предоставление субсидий Комитета по культуре Санкт-Петербурга.</p>
+    <p>${s.ph}</p>
+    <p><b>Направление затрат:</b> ${stat}</p>
+    <table border="1" cellspacing="0" cellpadding="6" style="border-collapse:collapse;width:100%">
+     <tr><th>Наименование</th><th>Ед.</th><th>Кол-во</th><th>Цена за ед., ₽</th><th>Сумма, ₽</th></tr>
+     <tr><td>${desc}</td><td align="center">${unit||'усл.'}</td><td align="center">${qty||1}</td><td align="right">${price.toLocaleString('ru-RU')}</td><td align="right">${total.toLocaleString('ru-RU')}</td></tr>
+     <tr><td colspan="4" align="right"><b>Итого:</b></td><td align="right"><b>${total.toLocaleString('ru-RU')} ₽</b></td></tr>
+    </table>
+    <p>${s.out}</p>
+    <p>Руководитель ${s.n} ______________ / [ФИО] /　　М.П.</p>
+   </div>`).join('');
+}
+let _kpCtx=null;
+function genKP(gi,ri){
+  const r=dtl[gi].rows[ri]; const X=(+r.qty||0)*(+r.rate||0);
+  if(X<=0){alert('Укажите кол-во и ставку — сумма строки должна быть больше 0.');return;}
+  const stat=dirLabel(r.dir)+' — '+(LIM23.find(x=>x.n===r.dir)||{}).t;
+  const P=kpPrices(X), unitPr=P.map(p=>Math.round(p/(r.qty||1)));
+  _kpCtx={stat,desc:r.name,unit:r.unit,qty:r.qty||1,P,unitPr};
+  const m=document.getElementById('kpModal');
+  m.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+     <h2 style="margin:0;font-size:17px">3 КП · ${r.name.slice(0,70)}</h2>
+     <button onclick="closeKP()" style="border:1px solid var(--line);background:#fff;border-radius:8px;padding:6px 12px;cursor:pointer">Закрыть ✕</button></div>
+   <div class="sub">Наша сметная цена строки = <b>${fmtRub(X)}</b> (средняя из трёх). Цены: КП-1 ${fmtRub(P[0])} · КП-2 ${fmtRub(P[1])} · КП-3 ${fmtRub(P[2])}.</div>
+   ${[0,1,2].map(i=>`<div style="border:1px solid var(--line);border-radius:10px;padding:12px;margin:10px 0">
+     <div style="display:flex;justify-content:space-between;align-items:center;gap:10px">
+       <b>КП-${i+1}: ${KP_SUP[i].n}</b>
+       <span>цена за ед. <b>${unitPr[i].toLocaleString('ru-RU')} ₽</b> · сумма <b>${(P[i]).toLocaleString('ru-RU')} ₽</b></span>
+     </div>
+     <textarea readonly rows="6" style="width:100%;margin-top:8px;font-size:12px" id="kptxt_${i}">${kpPlain(i,_kpCtx,P[i],unitPr[i])}</textarea>
+     <div style="display:flex;gap:8px;margin-top:6px">
+       <button onclick="cpKP(${i})" style="border:1px solid var(--line);background:#fff;border-radius:7px;padding:6px 12px;cursor:pointer">Копировать</button>
+       <button onclick="dlKP(${i})" style="border:1px solid var(--blue);background:var(--blue);color:#fff;border-radius:7px;padding:6px 12px;cursor:pointer">Скачать .doc</button>
+     </div></div>`).join('')}
+   <button onclick="dlKP('all')" style="border:1px solid var(--blue);background:var(--blue);color:#fff;border-radius:8px;padding:9px 14px;font-weight:600;cursor:pointer;margin-top:6px">Скачать все 3 КП одним .doc</button>`;
+  document.getElementById('kpModalWrap').style.display='';
+}
+function kpPlain(i,c,price,up){const s=KP_SUP[i];
+  return `${s.n}\nИсх. № [___] от «[__]» [_____] 2026 г.\n\nКОММЕРЧЕСКОЕ ПРЕДЛОЖЕНИЕ\nКому: [Наименование организации-заявителя]\n\n${s.ph}\nНаправление затрат: ${c.stat}\nНаименование: ${c.desc}\nЕд.: ${c.unit||'усл.'} · Кол-во: ${c.qty} · Цена за ед.: ${up.toLocaleString('ru-RU')} ₽ · Сумма: ${price.toLocaleString('ru-RU')} ₽\n\n${s.out}\nРуководитель ______________ / [ФИО] /  М.П.`;}
+function closeKP(){document.getElementById('kpModalWrap').style.display='none';}
+function cpKP(i){const t=document.getElementById('kptxt_'+i);t.select();try{document.execCommand('copy');}catch(e){}
+  try{navigator.clipboard&&navigator.clipboard.writeText(t.value);}catch(e){}}
+function _dl(name,bodyHtml){
+  const blob=new Blob(['﻿<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="utf-8"></head><body>'+bodyHtml+'</body></html>'],{type:'application/msword'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();a.remove();}
+function dlKP(which){
+  const c=_kpCtx;if(!c)return;
+  if(which==='all'){_dl('КП_3шт.doc',kpHtml(c.stat,c.desc,c.unit,c.qty,c.P[1]).replace(/PRICE/g,''));return;}
+  // отдельный КП: один поставщик
+  const i=which, html=kpHtml(c.stat,c.desc,c.unit,c.qty,c.P[i]).split('page-break-after:always')[ (0) ];
+  _dl('КП-'+(i+1)+'.doc', kpOneHtml(i,c,c.P[i],c.unitPr[i]));
+}
+function kpOneHtml(i,c,price,up){const s=KP_SUP[i];const total=price;
+  return `<div style="font-family:'Times New Roman',serif;font-size:13pt">
+   <p style="text-align:right">[Бланк: ${s.n}] · [ИНН/КПП, адрес, тел., e-mail]</p>
+   <p style="text-align:right">Исх. № [___] от «[__]» [_____] 2026 г.</p>
+   <p style="text-align:center;font-weight:bold;font-size:14pt">КОММЕРЧЕСКОЕ ПРЕДЛОЖЕНИЕ</p>
+   <p>Кому: [Наименование организации-заявителя].</p><p>${s.ph}</p>
+   <p><b>Направление затрат:</b> ${c.stat}</p>
+   <table border="1" cellspacing="0" cellpadding="6" style="border-collapse:collapse">
+    <tr><th>Наименование</th><th>Ед.</th><th>Кол-во</th><th>Цена за ед., ₽</th><th>Сумма, ₽</th></tr>
+    <tr><td>${c.desc}</td><td align="center">${c.unit||'усл.'}</td><td align="center">${c.qty}</td><td align="right">${up.toLocaleString('ru-RU')}</td><td align="right">${total.toLocaleString('ru-RU')}</td></tr>
+   </table><p>${s.out}</p><p>Руководитель ______________ / [ФИО] / М.П.</p></div>`;}
+function dlAllKP(){
+  let body='<h2>Коммерческие предложения (мониторинг цен, п. 8.3 № 189)</h2>';
+  dtl.forEach(G=>G.rows.forEach(r=>{
+    const L=LIM23.find(x=>x.n===r.dir)||{};const X=(+r.qty||0)*(+r.rate||0);
+    if(!L.k||X<=0)return;
+    const P=kpPrices(X),up=P.map(p=>Math.round(p/(r.qty||1)));
+    const c={stat:dirLabel(r.dir)+' — '+L.t,desc:r.name,unit:r.unit,qty:r.qty||1};
+    body+=`<h3>${r.name}</h3>`;
+    [0,1,2].forEach(i=>{body+=kpOneHtml(i,c,P[i],up[i])+'<p style="page-break-after:always"></p>';});
+  }));
+  _dl('Все_КП_по_смете.doc',body);
+}
+function dlSmetaDoc(){
+  const R=dtaxRates();let body='<h2>Детальная смета затрат</h2><table border="1" cellspacing="0" cellpadding="5" style="border-collapse:collapse;width:100%;font-family:\'Times New Roman\'"><tr><th>Наименование</th><th>Ед.</th><th>Кол-во</th><th>Ставка, ₽</th><th>Сумма, ₽</th><th>Напр. № 189</th></tr>';
+  let grand=0;
+  dtl.forEach(G=>{
+    body+=`<tr><td colspan="6" style="background:#eef;font-weight:bold">${G.g}</td></tr>`;let sub=0;
+    G.rows.forEach(r=>{const s=(+r.qty||0)*(+r.rate||0);sub+=s;
+      body+=`<tr><td>${r.name}</td><td align="center">${r.unit||''}</td><td align="center">${r.qty}</td><td align="right">${(Math.round(r.rate)||0).toLocaleString('ru-RU')}</td><td align="right">${s.toLocaleString('ru-RU')}</td><td>${dirLabel(r.dir)}</td></tr>`;});
+    if(G.tk){const tax=sub*R[G.tk];body+=`<tr><td colspan="4">Страховые взносы (${G.tk==='gph'?'ГПХ':'штат'}, ${R.n})</td><td align="right">${Math.round(tax).toLocaleString('ru-RU')}</td><td>${dirLabel(G.tdir)}</td></tr>`;sub+=tax;}
+    grand+=sub;});
+  body+=`<tr><td colspan="4" style="font-weight:bold">ИТОГО</td><td align="right" style="font-weight:bold">${Math.round(grand).toLocaleString('ru-RU')} ₽</td><td></td></tr></table>`;
+  _dl('Детальная_смета.doc',body);
+}
 function showTab(name){
-  const V={eval:'evalView',smeta:'smetaView',build:'buildView'};
-  const B={eval:'tabBtnEval',smeta:'tabBtnSmeta',build:'tabBtnBuild'};
+  const V={eval:'evalView',smeta:'smetaView',build:'buildView',detail:'detailView'};
+  const B={eval:'tabBtnEval',smeta:'tabBtnSmeta',build:'tabBtnBuild',detail:'tabBtnDetail'};
   Object.keys(V).forEach(k=>{
     const v=document.getElementById(V[k]),b=document.getElementById(B[k]);
     if(v)v.style.display=(k===name)?'':'none';
@@ -743,6 +993,7 @@ function recalc(){
   window.__score=total;
   recalcSmeta();
   recalcBuild();
+  recalcDetail();
   finModel(total);
   save();
 }
@@ -757,7 +1008,9 @@ function save(){
       bld:bld.map(r=>({n:r.n,sum:r.sum,d:r.d})),
       bldCols:bldCols.slice(),
       bScoreChk:!!(document.getElementById('bScoreCustomChk')||{}).checked,
-      bScoreVal:(document.getElementById('bScoreCustom')||{}).value
+      bScoreVal:(document.getElementById('bScoreCustom')||{}).value,
+      dtl:dtl,
+      dtax:(document.querySelector('input[name="dtax"]:checked')||{}).value||'common'
     }));
     const s=document.getElementById('saved');
     if(s){const d=new Date();
@@ -784,6 +1037,8 @@ function load(){
   const bck=document.getElementById('bScoreCustomChk'),bcv=document.getElementById('bScoreCustom');
   if(bck&&typeof d.bScoreChk==='boolean')bck.checked=d.bScoreChk;
   if(bcv&&d.bScoreVal!=null&&d.bScoreVal!=='')bcv.value=d.bScoreVal;
+  if(Array.isArray(d.dtl)&&d.dtl.length)dtl=d.dtl;
+  if(d.dtax){const ti=document.querySelector('input[name="dtax"][value="'+d.dtax+'"]');if(ti)ti.checked=true;}
   if(d.state)Object.keys(d.state).forEach(id=>{
     if(state[id]&&d.state[id]&&typeof d.state[id].val==='number'){
       state[id]={opt:d.state[id].opt,val:d.state[id].val};
@@ -806,8 +1061,11 @@ function resetAll(){
   document.getElementById('fmThreshold').value=60;
   const bck=document.getElementById('bScoreCustomChk'),bcv=document.getElementById('bScoreCustom');
   if(bck)bck.checked=false; if(bcv)bcv.value=75;
+  dtl=JSON.parse(JSON.stringify(DTL_DEF));
+  const tc=document.querySelector('input[name="dtax"][value="common"]');if(tc)tc.checked=true;
   renderSmeta();
   renderBuild();
+  renderDetail();
   recalc();
 }
 document.getElementById('pname').addEventListener('input',save);
@@ -818,6 +1076,7 @@ renderLimRef();
 load();
 renderSmeta();
 renderBuild();
+renderDetail();
 recalc();
 </script>
 </body>
