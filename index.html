@@ -327,16 +327,21 @@ function finModel(S){
   let T=parseFloat(document.getElementById('fmThreshold').value);
   if(isNaN(T))T=0; T=Math.min(Math.max(T,0),100);
   const c=cf41();
-  let prop = (S<T||T>=100) ? 0 : B*(S-T)/(100-T);
-  if(!isFinite(prop)||prop<0)prop=0;
-  const sub=prop*(1-c);
+  const Sd=Math.round(S*10)/10;            // балл как в карточке (округление до 0,1)
+  const cofin=B*c;                         // сумма софинансирования = доля × бюджет
+  let base = Sd<T ? 0 : B*(Sd/100);        // бюджет × балл/100
+  if(!isFinite(base)||base<0)base=0;
+  let sub = base - cofin;
+  if(!isFinite(sub)||sub<0)sub=0;
   document.getElementById('fmSubsidy').textContent=fmtRub(sub);
   const brk=document.getElementById('fmBreak');
-  if(S<T){
-    brk.textContent=`Итоговый балл ${S.toFixed(1)} ниже порога ${T} → субсидия 0 ₽.`;
+  if(Sd<T){
+    brk.textContent=`Итоговый балл ${Sd} ниже порога ${T} → субсидия 0 ₽.`;
   }else{
-    brk.innerHTML=`Пропорция по баллу ((${S.toFixed(1)} − ${T}) / (100 − ${T})) × бюджет = ${fmtRub(prop)}.<br>`+
-      `Минус софинансирование ${(c*100).toFixed(0)}% (−${fmtRub(prop*c)}) = ${fmtRub(sub)}.`;
+    brk.innerHTML=`Бюджет ${fmtRub(B)} × ${Sd}/100 = ${fmtRub(base)}.<br>`+
+      (c>0
+        ? `Минус софинансирование ${(c*100).toFixed(0)}% (−${fmtRub(cofin)}) = ${fmtRub(sub)}.`
+        : `Софинансирование не выбрано (−0 ₽) = ${fmtRub(sub)}.`);
   }
   const bdg=document.getElementById('badge');
   if(bdg)bdg.textContent=`Бюджет ${fmtRub(B)} · расчётная субсидия ${fmtRub(sub)}`;
