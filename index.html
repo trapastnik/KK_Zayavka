@@ -123,7 +123,9 @@
   table.sm.bld{table-layout:fixed;width:auto}
   table.sm.bld th{position:relative}
   table.sm.bld td,table.sm.bld th{overflow:hidden;text-overflow:ellipsis}
-  table.sm.bld td.desc,table.sm.bld td.stc{white-space:normal;overflow:visible;text-overflow:clip}
+  table.sm.bld td.desc,table.sm.bld td.stc,table.sm.bld td.dir{white-space:normal;overflow:visible;text-overflow:clip}
+  table.sm.bld td.dir{vertical-align:top}
+  table.sm.bld td.r input{width:100%;box-sizing:border-box}
   table.sm.bld td.desc{vertical-align:top}
   table.sm.bld textarea{width:100%;min-height:62px;box-sizing:border-box;
     border:1px solid var(--line);border-radius:7px;padding:5px 7px;
@@ -604,7 +606,7 @@ const BUILD_DEF={
  21:{sum:650000,  d:'Оплата труда штатных работников НКО (директор, бухгалтер, ответственные за мероприятие) за период'}
 };
 let bld=LIM23.map(L=>({n:L.n, sum:(BUILD_DEF[L.n]?BUILD_DEF[L.n].sum:0), d:(BUILD_DEF[L.n]?BUILD_DEF[L.n].d:'')}));
-const BCOLW_DEF=[46,300,380,140,80,150,210];   // №,Направление,Описание,Сумма,%S,Лимит₽,Статус
+const BCOLW_DEF=[44,210,360,165,76,150,265];   // №,Направление,Описание,Сумма,%S,Лимит₽,Статус
 let bldCols=BCOLW_DEF.slice();
 function applyBldCols(){
   const t=document.getElementById('bldTable');if(!t)return;
@@ -636,9 +638,9 @@ function renderBuild(){
     `<th class="r">% от S${rz(4)}</th><th class="r">Лимит ₽${rz(5)}</th><th>Статус</th></tr>`+
     bld.map((r,i)=>{const L=LIM23[i];return `<tr>
       <td class="r">${L.n}</td>
-      <td>${L.t}<div style="font-size:11px;margin-top:2px"><span style="color:var(--mut)">лимит ${(L.f*100).toFixed(0)}% от S</span> · ${L.k?'<span class="st" style="background:var(--amber-soft);color:var(--amber);padding:1px 7px">⚑ нужны ≥3 КП</span>':'<span style="color:#94a3b8">КП не требуются</span>'}</div></td>
+      <td class="dir">${L.t}<div style="font-size:11px;margin-top:2px"><span style="color:var(--mut)">лимит ${(L.f*100).toFixed(0)}% от S</span> · ${L.k?'<span class="st" style="background:var(--amber-soft);color:var(--amber);padding:1px 7px">⚑ нужны ≥3 КП</span>':'<span style="color:#94a3b8">КП не требуются</span>'}</div></td>
       <td class="desc"><textarea id="bd_${L.n}" rows="3" placeholder="ваше описание затрат по направлению…">${(r.d||'').replace(/&/g,'&amp;').replace(/</g,'&lt;')}</textarea></td>
-      <td class="r"><input type="number" min="0" step="1000" id="bs_${L.n}" value="${r.sum}"></td>
+      <td class="r"><input type="text" inputmode="numeric" id="bs_${L.n}" value="${(Math.round(r.sum)||0).toLocaleString('ru-RU')}"></td>
       <td class="r" id="bp_${L.n}">—</td>
       <td class="r" id="bl_${L.n}">—</td>
       <td class="stc" id="bst_${L.n}">—</td></tr>`;}).join('')+
@@ -647,7 +649,7 @@ function renderBuild(){
   applyBldCols();attachBldResizers();
   bld.forEach(r=>{
     const si=document.getElementById('bs_'+r.n),di=document.getElementById('bd_'+r.n);
-    if(si)si.addEventListener('input',()=>{r.sum=+si.value||0;recalc();});
+    if(si)si.addEventListener('input',()=>{r.sum=+(si.value.replace(/\D/g,''))||0;si.value=(r.sum).toLocaleString('ru-RU');recalc();});
     if(di)di.addEventListener('input',()=>{r.d=di.value;save();});
   });
 }
@@ -664,8 +666,8 @@ function recalcBuild(){
     pe.textContent=r.sum?pct.toFixed(1)+'%':'—';
     le.textContent=fmtRub(cap)+` (${(L.f*100).toFixed(0)}%)`;
     if(r.sum<=0)se.innerHTML='<span class="st" style="background:#eef2f6;color:#94a3b8">—</span>';
-    else if(r.sum<=cap+0.5)se.innerHTML=`<span class="st ok">в лимите · запас ${fmtRub(cap-r.sum)}</span>`;
-    else se.innerHTML=`<span class="st bad">−${fmtRub(r.sum-cap)} сверх лимита</span>`;
+    else if(r.sum<=cap+0.5)se.innerHTML=`<span class="st ok">запас ${fmtRub(cap-r.sum)}</span>`;
+    else se.innerHTML=`<span class="st bad">−${fmtRub(r.sum-cap)} сверх</span>`;
   });
   const g=(id,v)=>{const x=document.getElementById(id);if(x)x.textContent=v;};
   g('bSum',fmtRub(S));g('bEligRow',fmtRub(elig));
