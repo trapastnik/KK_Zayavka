@@ -138,6 +138,7 @@
 <div class="tabs">
   <button id="tabBtnEval" class="active" onclick="showTab('eval')">Критерии оценки</button>
   <button id="tabBtnSmeta" onclick="showTab('smeta')">Смета и лимиты</button>
+  <button id="tabBtnBuild" onclick="showTab('build')">Конструктор бюджета</button>
 </div>
 <div id="evalView">
 <div class="wrap">
@@ -203,6 +204,21 @@
       <summary>Справочник: 23 направления затрат и предельные объёмы (Приложение № 1 к Порядку 1)</summary>
       <table class="sm" id="smLimRef"></table>
     </details>
+  </div>
+</div>
+
+<div id="buildView" class="smeta-wrap" style="display:none">
+  <div class="sm-card">
+    <h2>Конструктор бюджета по 23 направлениям (постановление № 189, Приложение № 1)</h2>
+    <div class="sub">Все направления затрат построчно. Вписывайте свои суммы и описания в нужные строки — % от S, лимит ₽ и статус считаются вживую. S = сумма всех строк. Цель — получить <b>≈ 10 млн ₽ (V<sub>расчёт</sub>, уже с учётом баллов)</b>: при ~75 баллах для этого нужна S<sub>годная</sub> ≈ 13–14 млн, вся в лимитах. Ориентир — плитка V<sub>расчёт</sub> ниже.</div>
+    <div class="sm-out" style="margin:0 0 16px">
+      <div class="box hl"><div class="v" id="bTot">0 ₽</div><div class="k">S — итог (сумма строк)</div></div>
+      <div class="box"><div class="v" id="bElig">0 ₽</div><div class="k">S<sub>годная</sub> (в пределах лимитов)</div></div>
+      <div class="box"><div class="v" id="bOver">0</div><div class="k">строк с превышением</div></div>
+      <div class="box"><div class="v" id="bVcalc">0 ₽</div><div class="k">V<sub>расчёт</sub> = S<sub>годная</sub> × балл/100</div></div>
+    </div>
+    <table class="sm" id="bldTable"></table>
+    <div class="sub" style="margin-top:12px">Лимиты с вариативом: п.4 — до 70 % для мультимедийного проекта; п.13 — до 30 % при тираже одного наименования &gt; 100 000 экз.; п.19 — до 5 % для выставок/мастер-классов. В расчёте взят базовый %.</div>
   </div>
 </div>
 
@@ -518,12 +534,100 @@ function finModel(score){
   const bdg=document.getElementById('badge');
   if(bdg)bdg.textContent=`S ${fmtRub(raw)} · годная ${fmtRub(elig)} · V₍расч₎ ${fmtRub(V)}`;
 }
+/* ===== КОНСТРУКТОР БЮДЖЕТА: 23 направления (Приложение № 1 № 189) ===== */
+const LIM23=[
+ {n:1, f:1.00, t:'Аренда территорий, помещений, сценических площадок; техническое обеспечение проведения мероприятий'},
+ {n:2, f:1.00, t:'Сценические и другие конструкции (аренда, изготовление, монтаж, доставка, спецы, погрузка)'},
+ {n:3, f:0.50, t:'Художественно-декорационное оформление территорий/помещений/площадок'},
+ {n:4, f:0.40, t:'Свет/звук/видео-сопровождение, аренда тех. и технологического оборудования (до 70% — мультимедийный проект)'},
+ {n:5, f:0.30, t:'Создание (съёмка, монтаж) видеоматериалов, в т.ч. в формате онлайн'},
+ {n:6, f:0.20, t:'ТВ-съёмка/трансляция, интернет-платформа, художественная видеоверсия мероприятия'},
+ {n:7, f:0.20, t:'Аренда/приобретение/изготовление костюмов, реквизита, бутафории'},
+ {n:8, f:0.50, t:'Услуги артистов, творческих специалистов и участников творческих коллективов'},
+ {n:9, f:0.50, t:'Проживание артистов (≤ 8 000 ₽/сутки/чел; ≤ «3 звезды», для МГН — «4 звезды»)'},
+ {n:10,f:0.20, t:'Транспорт/трансфер артистов и творческих специалистов (эконом-класс)'},
+ {n:11,f:0.15, t:'Режиссёрско-постановочная группа, кураторы, привлекаемые в связи с мероприятием (ГПХ)'},
+ {n:12,f:0.05, t:'Админ.-хоз. персонал, иные специалисты (продвижение, реклама, дизайн, сбор информации) (ГПХ)'},
+ {n:13,f:0.10, t:'Разработка/изготовление рекламных и информационных материалов (до 30% при тираже >100 000 экз.)'},
+ {n:14,f:0.10, t:'Размещение рекламы, контекстная/таргетированная реклама в сети «Интернет»'},
+ {n:15,f:0.01, t:'Услуги по проведению спецэффектов'},
+ {n:16,f:0.05, t:'Приобретение/изготовление сувенирной (в т.ч. цветочной) продукции'},
+ {n:17,f:0.15, t:'Создание/изготовление/приобретение призов победителям конкурсов (фестивалей)'},
+ {n:18,f:0.15, t:'Безопасность, уборка, биотуалеты, дежурство бригад скорой помощи'},
+ {n:19,f:0.01, t:'Расходные материалы (до 5% — выставочные проекты, мастер-классы)'},
+ {n:20,f:0.02, t:'Вознаграждение за использование объектов авторских и смежных прав'},
+ {n:21,f:0.05, t:'Оплата труда штатных работников получателя субсидии за период мероприятия'},
+ {n:22,f:0.03, t:'Коммунальные расходы (электро-, тепло-, водоснабжение), связанные с мероприятием'},
+ {n:23,f:0.03, t:'Услуги сурдо- и тифлопереводчиков'}
+];
+const BUILD_DEF={
+ 4 :{sum:3500000, d:'Аренда 35 шлемов Pico 4 + комплекты управления + медиатека ~39 ед. + пуско-наладка + техсопровождение (15.07–15.11)'},
+ 5 :{sum:3950000, d:'Производство собств. VR-контента (расширенная программа фильмов): операторы 360°, стич, монтаж, постпрод, цветокор, программирование интерактива'},
+ 8 :{sum:1500000, d:'Гонорары музыкантов Капеллы (~100к) + творческие специалисты: художник-постановщик иммерс. пространства, композитор/саунд-дизайн, художник по свету, перформеры'},
+ 11:{sum:1950000, d:'Режиссёрско-постановочная группа фильмов (режиссёр VR, постановщик, сценарист) + куратор VR-десанта + координатор по партнёрам/площадкам + кураторы-медиаторы точек (ГПХ)'},
+ 13:{sum:900000,  d:'Промо-ролики, лендинг/сайт проекта, печатная/полиграфическая продукция, оформление и навигация точек показа'},
+ 14:{sum:600000,  d:'Контекстная/таргетированная реклама в сети «Интернет», SMM-продвижение по районам, посевы у лидеров мнений'},
+ 18:{sum:250000,  d:'Санитарно-гигиеническое обеспечение и уборка точек показа, дежурство (безопасность проведения)'},
+ 19:{sum:130000,  d:'Гигиенические/чистящие материалы для оптики шлемов, канцелярия'},
+ 20:{sum:260000,  d:'Лицензии на музыку и смежные права в собственном VR-контенте, авторские отчисления'},
+ 21:{sum:650000,  d:'Оплата труда штатных работников НКО (директор, бухгалтер, ответственные за мероприятие) за период'}
+};
+let bld=LIM23.map(L=>({n:L.n, sum:(BUILD_DEF[L.n]?BUILD_DEF[L.n].sum:0), d:(BUILD_DEF[L.n]?BUILD_DEF[L.n].d:'')}));
+function renderBuild(){
+  const el=document.getElementById('bldTable');if(!el)return;
+  el.innerHTML='<tr><th class="r">№</th><th>Направление затрат (лимит)</th><th>Ваше описание</th>'+
+    '<th class="r">Ваша сумма, ₽</th><th class="r">% от S</th><th class="r">Лимит ₽</th><th>Статус</th></tr>'+
+    bld.map((r,i)=>{const L=LIM23[i];return `<tr>
+      <td class="r">${L.n}</td>
+      <td>${L.t}<div style="color:var(--mut);font-size:11px;margin-top:2px">лимит ${(L.f*100).toFixed(0)}% от S</div></td>
+      <td><input type="text" id="bd_${L.n}" value="${(r.d||'').replace(/"/g,'&quot;')}" style="width:99%;text-align:left"></td>
+      <td class="r"><input type="number" min="0" step="1000" id="bs_${L.n}" value="${r.sum}"></td>
+      <td class="r" id="bp_${L.n}">—</td>
+      <td class="r" id="bl_${L.n}">—</td>
+      <td id="bst_${L.n}">—</td></tr>`;}).join('')+
+    `<tr class="tot"><td></td><td>ИТОГО (S)</td><td></td><td class="r" id="bSum">—</td><td class="r">100%</td>
+      <td class="r" id="bEligRow">—</td><td id="bStatRow">—</td></tr>`;
+  bld.forEach(r=>{
+    const si=document.getElementById('bs_'+r.n),di=document.getElementById('bd_'+r.n);
+    if(si)si.addEventListener('input',()=>{r.sum=+si.value||0;recalc();});
+    if(di)di.addEventListener('input',()=>{r.d=di.value;save();});
+  });
+}
+function recalcBuild(){
+  let S=0;bld.forEach(r=>S+=r.sum);
+  let elig=0,over=0;
+  bld.forEach((r,i)=>{
+    const L=LIM23[i],cap=L.f*S,pct=S?(r.sum/S*100):0;
+    const e=Math.min(r.sum,cap);elig+=e;
+    if(r.sum>cap+0.5)over++;
+    const pe=document.getElementById('bp_'+L.n),le=document.getElementById('bl_'+L.n),
+          se=document.getElementById('bst_'+L.n);
+    if(!pe)return;
+    pe.textContent=r.sum?pct.toFixed(1)+'%':'—';
+    le.textContent=fmtRub(cap)+` (${(L.f*100).toFixed(0)}%)`;
+    if(r.sum<=0)se.innerHTML='<span class="st" style="background:#eef2f6;color:#94a3b8">—</span>';
+    else if(r.sum<=cap+0.5)se.innerHTML=`<span class="st ok">в лимите · запас ${fmtRub(cap-r.sum)}</span>`;
+    else se.innerHTML=`<span class="st bad">−${fmtRub(r.sum-cap)} сверх лимита</span>`;
+  });
+  const g=(id,v)=>{const x=document.getElementById(id);if(x)x.textContent=v;};
+  g('bSum',fmtRub(S));g('bEligRow',fmtRub(elig));
+  g('bStatRow', over? `${over} стр. с превышением` : 'всё в лимитах ✓');
+  g('bTot',fmtRub(S));g('bElig',fmtRub(elig));
+  const ov=document.getElementById('bOver');
+  if(ov){ov.textContent=over;ov.style.color=over?'var(--red)':'var(--green)';}
+  let T=parseFloat(document.getElementById('fmThreshold').value);if(isNaN(T))T=0;
+  const sc=window.__score||0, V=(sc<T?0:elig*sc/100);
+  g('bVcalc',fmtRub(V));
+  window.__bSum=S;window.__bElig=elig;
+}
 function showTab(name){
-  const ev=document.getElementById('evalView'),sm=document.getElementById('smetaView');
-  const be=document.getElementById('tabBtnEval'),bs=document.getElementById('tabBtnSmeta');
-  const e=name==='eval';
-  ev.style.display=e?'':'none';sm.style.display=e?'none':'';
-  be.classList.toggle('active',e);bs.classList.toggle('active',!e);
+  const V={eval:'evalView',smeta:'smetaView',build:'buildView'};
+  const B={eval:'tabBtnEval',smeta:'tabBtnSmeta',build:'tabBtnBuild'};
+  Object.keys(V).forEach(k=>{
+    const v=document.getElementById(V[k]),b=document.getElementById(B[k]);
+    if(v)v.style.display=(k===name)?'':'none';
+    if(b)b.classList.toggle('active',k===name);
+  });
 }
 
 function recalc(){
@@ -567,7 +671,9 @@ function recalc(){
         <span class="gain ${r.gain<0.05?'zero':''}">${r.gain<0.05?'максимум':'+'+r.gain.toFixed(2)+' б.'}</span></div>
       <div>${r.h.replace(/^[\d.]+\s*/,'')} — сейчас ${r.cur}/100</div>
     </div>`).join('');
+  window.__score=total;
   recalcSmeta();
+  recalcBuild();
   finModel(total);
   save();
 }
@@ -578,7 +684,8 @@ function save(){
     localStorage.setItem(LSKEY,JSON.stringify({
       pname:document.getElementById('pname').value, state:state,
       fmThreshold:document.getElementById('fmThreshold').value,
-      smeta:smeta.map(r=>({id:r.id,sum:r.sum}))
+      smeta:smeta.map(r=>({id:r.id,sum:r.sum})),
+      bld:bld.map(r=>({n:r.n,sum:r.sum,d:r.d}))
     }));
     const s=document.getElementById('saved');
     if(s){const d=new Date();
@@ -595,6 +702,10 @@ function load(){
   if(Array.isArray(d.smeta))d.smeta.forEach(sv=>{
     const r=smeta.find(x=>x.id===sv.id);
     if(r&&typeof sv.sum==='number')r.sum=sv.sum;
+  });
+  if(Array.isArray(d.bld))d.bld.forEach(bv=>{
+    const r=bld.find(x=>x.n===bv.n);
+    if(r){if(typeof bv.sum==='number')r.sum=bv.sum;if(typeof bv.d==='string')r.d=bv.d;}
   });
   if(d.state)Object.keys(d.state).forEach(id=>{
     if(state[id]&&d.state[id]&&typeof d.state[id].val==='number'){
@@ -613,8 +724,10 @@ function resetAll(){
     if(inp)inp.checked=true;
   }));
   smeta=SMETA_DEF.map(r=>({...r}));
+  bld=LIM23.map(L=>({n:L.n,sum:(BUILD_DEF[L.n]?BUILD_DEF[L.n].sum:0),d:(BUILD_DEF[L.n]?BUILD_DEF[L.n].d:'')}));
   document.getElementById('fmThreshold').value=60;
   renderSmeta();
+  renderBuild();
   recalc();
 }
 document.getElementById('pname').addEventListener('input',save);
@@ -622,6 +735,7 @@ document.getElementById('fmThreshold').addEventListener('input',recalc);
 renderLimRef();
 load();
 renderSmeta();
+renderBuild();
 recalc();
 </script>
 </body>
