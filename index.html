@@ -749,7 +749,7 @@ function recalcBuild(){
   window.__bSum=S;window.__bElig=elig;
 }
 /* ===== ДЕТАЛЬНЫЙ БЮДЖЕТ + ГЕНЕРАТОР КП ===== */
-const DTL_VER=7;
+const DTL_VER=8;
 const PMON=4; // срок проекта, мес (база для пересчёта; редактируется по строке)
 const DTL_DEF=[
  {g:'Производство — БОЛЬШОЙ формат (3 фильма: оркестр Капеллы, орган с интерактивом регистров)', macro:'Производство собственного VR-контента', rows:[
@@ -791,9 +791,9 @@ const DTL_DEF=[
    {name:'Координатор по партнёрам и площадкам',unit:'чел',qty:1,rate:40000,mon:4,dir:11,tf:'gph'},
    {name:'Кураторы-медиаторы точек показа (творческое сопровождение, 6 точек)',unit:'чел',qty:6,rate:40000,mon:4,dir:11,tf:'gph'}]},
  {g:'Персонал — штат НКО (трудовые договоры)', macro:'Персонал', rows:[
-   {name:'Директор НКО (часть занятости по мероприятию)',unit:'чел',qty:1,rate:50000,mon:4,dir:21,tf:'staff'},
-   {name:'Бухгалтер НКО (учёт целевого расходования субсидии)',unit:'чел',qty:1,rate:30000,mon:4,dir:21,tf:'staff'},
-   {name:'Руководитель проекта',unit:'чел',qty:1,rate:70000,mon:4,dir:21,tf:'staff'}]},
+   {name:'Директор НКО (часть занятости по мероприятию)',unit:'чел',qty:1,rate:50000,mon:4,emp:25,dir:21,tf:'staff'},
+   {name:'Бухгалтер НКО (учёт целевого расходования субсидии)',unit:'чел',qty:1,rate:30000,mon:4,emp:25,dir:21,tf:'staff'},
+   {name:'Руководитель проекта',unit:'чел',qty:1,rate:70000,mon:4,emp:25,dir:21,tf:'staff'}]},
  {g:'Маркетинг, реклама, продвижение', macro:'Маркетинг и продвижение', rows:[
    {name:'Промо-ролик 30 сек (по точкам/форматам)',unit:'ролик',qty:6,rate:40000,mon:1,dir:13,tf:''},
    {name:'Лендинг/сайт проекта (расписание, карта точек, каталог)',unit:'усл.',qty:1,rate:200000,mon:1,dir:13,tf:''},
@@ -822,20 +822,21 @@ function dtaxRates(){
 const TKN={gph:'ГПХ',staff:'штат',ip:'ИП'};
 function dirLabel(n){const L=LIM23.find(x=>x.n===n);return L?('п.'+n+' ≤'+(L.f*100).toFixed(0)+'% — '+L.s):('п.'+n);}
 function rmon(r){return r.mon==null?1:(+r.mon||0);}
-function rsum(r){return (+r.qty||0)*(+r.rate||0)*rmon(r);}
+function remp(r){return r.emp==null?1:(+r.emp||0)/100;}
+function rsum(r){return (+r.qty||0)*(+r.rate||0)*rmon(r)*remp(r);}
 const FORMS=[['','— подряд / юрлицо (без взносов)'],['gph','ГПХ (взносы)'],['ip','ИП (взносы 0)'],['staff','Штат (взносы)']];
 function renderDetail(){
   const el=document.getElementById('dtlTable');if(!el)return;
   let h='<tr class="hdr"><th class="r" style="width:42px">№</th><th>Наименование</th><th class="r">Ед.</th><th class="r">Кол-во</th>'+
-    '<th class="r">Мес</th><th class="r">Ставка, ₽</th><th class="r">Сумма, ₽</th><th>Напр. № 189</th><th>Форма</th><th>Статус (лимит)</th><th>Действия</th></tr>';
+    '<th class="r">Мес</th><th class="r">Занятость&nbsp;%</th><th class="r">Ставка, ₽</th><th class="r">Сумма, ₽</th><th>Напр. № 189</th><th>Форма</th><th>Статус (лимит)</th><th>Действия</th></tr>';
   const MAC=[...new Set(dtl.map(b=>b.macro||'—'))];
   let curM=null;
   dtl.forEach((G,gi)=>{
     const mc=G.macro||'—';
     if(mc!==curM){curM=mc;const mi=MAC.indexOf(mc),col=macroCol.has(mc);
-      h+=`<tr class="macro"><td colspan="11"><span class="mtog" onclick="toggleMacro(${mi})">${col?'▸':'▾'} Макроблок: ${esc(mc)}</span><span class="msum" id="dmac_${mi}">—</span></td></tr>`;}
+      h+=`<tr class="macro"><td colspan="12"><span class="mtog" onclick="toggleMacro(${mi})">${col?'▸':'▾'} Макроблок: ${esc(mc)}</span><span class="msum" id="dmac_${mi}">—</span></td></tr>`;}
     if(macroCol.has(mc))return;
-    h+=`<tr class="tot"><td colspan="11">Блок ${gi+1}. ${G.g}</td></tr>`;
+    h+=`<tr class="tot"><td colspan="12">Блок ${gi+1}. ${G.g}</td></tr>`;
     G.rows.forEach((r,ri)=>{
       const dirOpts=LIM23.map(L=>`<option value="${L.n}"${L.n===r.dir?' selected':''}>${dirLabel(L.n)}</option>`).join('');
       const fOpts=FORMS.map(x=>`<option value="${x[0]}"${(r.tf||'')===x[0]?' selected':''}>${x[1]}</option>`).join('');
@@ -846,6 +847,7 @@ function renderDetail(){
         <td class="r"><input type="text" id="du_${gi}_${ri}" value="${(r.unit||'').replace(/"/g,'&quot;')}" style="width:74px"></td>
         <td class="r"><input type="text" inputmode="numeric" id="dq_${gi}_${ri}" value="${(r.qty||0).toLocaleString('ru-RU')}" style="width:62px"></td>
         <td class="r"><input type="text" inputmode="numeric" id="dm_${gi}_${ri}" value="${rmon(r)}" style="width:46px" title="кол-во месяцев"></td>
+        <td class="r"><input type="text" inputmode="numeric" id="de_${gi}_${ri}" value="${(r.emp==null?100:r.emp)}" style="width:52px" title="занятость, %"></td>
         <td class="r"><input type="text" inputmode="numeric" id="dr_${gi}_${ri}" value="${(Math.round(r.rate)||0).toLocaleString('ru-RU')}" style="width:100px"></td>
         <td class="r" id="ds_${gi}_${ri}" style="font-weight:700">—</td>
         <td class="dir"><select id="dd_${gi}_${ri}" style="width:218px;max-width:218px">${dirOpts}</select></td>
@@ -853,10 +855,10 @@ function renderDetail(){
         <td class="stc" id="dst_${gi}_${ri}">—</td>
         <td style="white-space:nowrap">${kp?`<button type="button" onclick="genKP(${gi},${ri})" style="border:1px solid var(--blue);background:var(--blue-soft);color:var(--blue);border-radius:6px;padding:3px 9px;font-size:11px;font-weight:700;cursor:pointer">КП</button> `:''}<button type="button" onclick="delDtl(${gi},${ri})" title="удалить" style="border:1px solid var(--line);background:#fff;border-radius:6px;padding:3px 8px;font-size:11px;cursor:pointer;color:var(--red)">✕</button></td></tr>`;
     });
-    h+=`<tr><td class="r" style="color:var(--mut)">${gi+1}.в</td><td colspan="5" style="color:var(--mut)">Страховые взносы по блоку (по форме строк) — <span id="dtrate_${gi}"></span></td><td class="r" id="dtaxb_${gi}" style="font-weight:700">—</td><td colspan="4"></td></tr>`;
-    h+=`<tr><td></td><td colspan="10"><button type="button" onclick="addDtl(${gi})" style="border:1px dashed #94a3b8;background:#fff;border-radius:7px;padding:5px 12px;font-size:12px;cursor:pointer;color:#475569">+ добавить строку в Блок ${gi+1}</button> <span style="color:var(--mut);font-size:12px">подытог блока: <b id="dsub_${gi}">—</b></span></td></tr>`;
+    h+=`<tr><td class="r" style="color:var(--mut)">${gi+1}.в</td><td colspan="6" style="color:var(--mut)">Страховые взносы по блоку (по форме строк) — <span id="dtrate_${gi}"></span></td><td class="r" id="dtaxb_${gi}" style="font-weight:700">—</td><td colspan="4"></td></tr>`;
+    h+=`<tr><td></td><td colspan="11"><button type="button" onclick="addDtl(${gi})" style="border:1px dashed #94a3b8;background:#fff;border-radius:7px;padding:5px 12px;font-size:12px;cursor:pointer;color:#475569">+ добавить строку в Блок ${gi+1}</button> <span style="color:var(--mut);font-size:12px">подытог блока: <b id="dsub_${gi}">—</b></span></td></tr>`;
   });
-  h+=`<tr class="tot"><td></td><td>ИТОГО смета (S)</td><td></td><td></td><td></td><td></td><td class="r" id="dGrand">—</td><td colspan="4"></td></tr>`;
+  h+=`<tr class="tot"><td></td><td>ИТОГО смета (S)</td><td></td><td></td><td></td><td></td><td></td><td class="r" id="dGrand">—</td><td colspan="4"></td></tr>`;
   el.className='sm';el.innerHTML=h;
   dtl.forEach((G,gi)=>G.rows.forEach((r,ri)=>{
     const bind=(id,prop,numeric)=>{const e=document.getElementById(id+'_'+gi+'_'+ri);if(!e)return;
@@ -864,7 +866,7 @@ function renderDetail(){
         if(numeric){r[prop]=+(e.value.replace(/\D/g,''))||0;e.value=(r[prop]).toLocaleString('ru-RU');}
         else r[prop]=e.value;
         recalc();});};
-    bind('dn','name',false);bind('du','unit',false);bind('dq','qty',true);bind('dm','mon',true);bind('dr','rate',true);
+    bind('dn','name',false);bind('du','unit',false);bind('dq','qty',true);bind('dm','mon',true);bind('de','emp',true);bind('dr','rate',true);
     const dd=document.getElementById('dd_'+gi+'_'+ri);
     if(dd)dd.addEventListener('change',()=>{r.dir=+dd.value;renderDetail();recalc();});
     const df=document.getElementById('df_'+gi+'_'+ri);
@@ -955,26 +957,26 @@ function kpLots(){
   const mode=kpMode(), out=[];
   if(mode==='row'){
     dtl.forEach(G=>G.rows.forEach(r=>{const L=LIM23.find(x=>x.n===r.dir)||{};const s=rsum(r);
-      if(L.k&&s>0)out.push({title:r.name,items:[{name:r.name,unit:r.unit,qty:(+r.qty||1)*rmon(r),rate:+r.rate||0}],total:s});}));
+      if(L.k&&s>0)out.push({title:r.name,items:[{name:r.name,unit:r.unit,qty:(+r.qty||1)*rmon(r)*remp(r),rate:+r.rate||0}],total:s});}));
   }else if(mode==='group'){
     dtl.forEach(G=>{const items=[];let tot=0;
       G.rows.forEach(r=>{const L=LIM23.find(x=>x.n===r.dir)||{};const s=rsum(r);
-        if(L.k&&s>0){items.push({name:r.name,unit:r.unit,qty:(+r.qty||1)*rmon(r),rate:+r.rate||0});tot+=s;}});
+        if(L.k&&s>0){items.push({name:r.name,unit:r.unit,qty:(+r.qty||1)*rmon(r)*remp(r),rate:+r.rate||0});tot+=s;}});
       if(items.length)out.push({title:G.g,items,total:tot});});
   }else if(mode==='prod1'){
     const pit=[];let ptot=0;const map={};
     dtl.forEach(G=>{const isProd=/^Производство/.test(G.g);
       G.rows.forEach(r=>{const L=LIM23.find(x=>x.n===r.dir)||{};const s=rsum(r);if(!(L.k&&s>0))return;
-        if(isProd){pit.push({name:r.name,unit:r.unit,qty:(+r.qty||1)*rmon(r),rate:+r.rate||0});ptot+=s;}
+        if(isProd){pit.push({name:r.name,unit:r.unit,qty:(+r.qty||1)*rmon(r)*remp(r),rate:+r.rate||0});ptot+=s;}
         else{if(!map[r.dir])map[r.dir]={title:dirLabel(r.dir)+' — '+L.t,items:[],total:0};
-          map[r.dir].items.push({name:r.name,unit:r.unit,qty:(+r.qty||1)*rmon(r),rate:+r.rate||0});map[r.dir].total+=s;}});});
+          map[r.dir].items.push({name:r.name,unit:r.unit,qty:(+r.qty||1)*rmon(r)*remp(r),rate:+r.rate||0});map[r.dir].total+=s;}});});
     if(pit.length)out.push({title:'Производство собственного VR-контента (15 фильмов: большой/средний/малый + лицензии/накладные)',items:pit,total:ptot});
     Object.keys(map).sort((a,b)=>a-b).forEach(k=>out.push(map[k]));
   }else{
     const map={};
     dtl.forEach(G=>G.rows.forEach(r=>{const L=LIM23.find(x=>x.n===r.dir)||{};const s=rsum(r);
       if(L.k&&s>0){if(!map[r.dir])map[r.dir]={title:dirLabel(r.dir)+' — '+L.t,items:[],total:0};
-        map[r.dir].items.push({name:r.name,unit:r.unit,qty:(+r.qty||1)*rmon(r),rate:+r.rate||0});map[r.dir].total+=s;}}));
+        map[r.dir].items.push({name:r.name,unit:r.unit,qty:(+r.qty||1)*rmon(r)*remp(r),rate:+r.rate||0});map[r.dir].total+=s;}}));
     Object.keys(map).sort((a,b)=>a-b).forEach(k=>out.push(map[k]));
   }
   return out;
@@ -1072,18 +1074,18 @@ function smetaTable(num){ // num: true → ₽ с разделителями (do
   const R=dtaxRates();let grand=0;
   const fm=v=>num?Math.round(v).toLocaleString('ru-RU'):String(Math.round(v));
   let b='<table border="1" cellspacing="0" cellpadding="5" style="border-collapse:collapse;width:100%;font-family:\'Times New Roman\'">'+
-    '<tr><th>№</th><th>Наименование</th><th>Ед.</th><th>Кол-во</th><th>Мес</th><th>Ставка, ₽</th><th>Сумма, ₽</th><th>Напр. № 189</th><th>Форма</th></tr>';
+    '<tr><th>№</th><th>Наименование</th><th>Ед.</th><th>Кол-во</th><th>Мес</th><th>Занятость %</th><th>Ставка, ₽</th><th>Сумма, ₽</th><th>Напр. № 189</th><th>Форма</th></tr>';
   dtl.forEach((G,gi)=>{
-    b+=`<tr><td colspan="9" style="background:#eef;font-weight:bold">Блок ${gi+1}. ${esc(G.g)}</td></tr>`;
+    b+=`<tr><td colspan="10" style="background:#eef;font-weight:bold">Блок ${gi+1}. ${esc(G.g)}</td></tr>`;
     let sub=0,bTax=0;
     G.rows.forEach((r,ri)=>{const s=rsum(r);sub+=s;
       const fl=(FORMS.find(x=>x[0]===(r.tf||''))||['',''])[1];
       const rate=r.tf?(R[r.tf]||0):0;bTax+=s*rate;
-      b+=`<tr><td>${gi+1}.${ri+1}</td><td>${esc(r.name)}</td><td align="center">${esc(r.unit||'')}</td><td align="center">${r.qty}</td><td align="center">${rmon(r)}</td><td align="right">${fm(r.rate)}</td><td align="right">${fm(s)}</td><td>${esc(dirLabel(r.dir))}</td><td>${esc(fl)}</td></tr>`;});
-    if(bTax>0)b+=`<tr><td></td><td colspan="5">Страховые взносы по блоку (${R.n})</td><td align="right">${fm(bTax)}</td><td colspan="2"></td></tr>`;
+      b+=`<tr><td>${gi+1}.${ri+1}</td><td>${esc(r.name)}</td><td align="center">${esc(r.unit||'')}</td><td align="center">${r.qty}</td><td align="center">${rmon(r)}</td><td align="center">${r.emp==null?100:r.emp}%</td><td align="right">${fm(r.rate)}</td><td align="right">${fm(s)}</td><td>${esc(dirLabel(r.dir))}</td><td>${esc(fl)}</td></tr>`;});
+    if(bTax>0)b+=`<tr><td></td><td colspan="6">Страховые взносы по блоку (${R.n})</td><td align="right">${fm(bTax)}</td><td colspan="2"></td></tr>`;
     sub+=bTax;grand+=sub;
-    b+=`<tr><td colspan="6" align="right" style="font-weight:bold">Подытог Блока ${gi+1}:</td><td align="right" style="font-weight:bold">${fm(sub)}</td><td colspan="2"></td></tr>`;});
-  b+=`<tr><td colspan="6" align="right" style="font-weight:bold">ИТОГО смета (S):</td><td align="right" style="font-weight:bold">${fm(grand)}</td><td colspan="2"></td></tr></table>`;
+    b+=`<tr><td colspan="7" align="right" style="font-weight:bold">Подытог Блока ${gi+1}:</td><td align="right" style="font-weight:bold">${fm(sub)}</td><td colspan="2"></td></tr>`;});
+  b+=`<tr><td colspan="7" align="right" style="font-weight:bold">ИТОГО смета (S):</td><td align="right" style="font-weight:bold">${fm(grand)}</td><td colspan="2"></td></tr></table>`;
   return b;
 }
 function dlSmetaDoc(){_dl('Детальная_смета.doc','<h2>Детальная смета затрат</h2>'+smetaTable(true));}
