@@ -231,6 +231,15 @@
       <div class="box"><div class="v" id="bOver">0</div><div class="k">строк с превышением</div></div>
       <div class="box"><div class="v" id="bVcalc">0 ₽</div><div class="k">V<sub>расчёт</sub> = S<sub>годная</sub> × балл/100</div></div>
     </div>
+    <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;font-size:13px;margin:0 0 16px;padding:12px 14px;background:#f8fafc;border:1px solid var(--line);border-radius:10px">
+      <span>Балл из вкладки «Критерии»: <b id="bScoreEval">—</b> / 100</span>
+      <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
+        <input type="checkbox" id="bScoreCustomChk"> произвольный балл
+      </label>
+      <input type="number" id="bScoreCustom" min="0" max="100" step="0.1" value="75" disabled
+        style="width:84px;text-align:right;border:1px solid var(--line);border-radius:7px;padding:5px 7px;font-weight:600">
+      <span style="color:var(--mut)">в расчёте: <b id="bScoreUsed">—</b></span>
+    </div>
     <div class="sub" style="margin:0 0 8px;color:var(--blue)">↔ Ширину столбцов «Направление», «Описание», «Сумма», «% от S», «Лимит ₽» можно тянуть за правый край заголовка.</div>
     <div class="bldscroll"><table class="sm bld" id="bldTable"></table></div>
     <div class="sub" style="margin-top:12px">Лимиты с вариативом: п.4 — до 70 % для мультимедийного проекта; п.13 — до 30 % при тираже одного наименования &gt; 100 000 экз.; п.19 — до 5 % для выставок/мастер-классов. В расчёте взят базовый %.</div>
@@ -658,8 +667,17 @@ function recalcBuild(){
   const ov=document.getElementById('bOver');
   if(ov){ov.textContent=over;ov.style.color=over?'var(--red)':'var(--green)';}
   let T=parseFloat(document.getElementById('fmThreshold').value);if(isNaN(T))T=0;
-  const sc=window.__score||0, V=(sc<T?0:elig*sc/100);
+  const evalScore=window.__score||0;
+  const chk=document.getElementById('bScoreCustomChk');
+  const useCustom=!!(chk&&chk.checked);
+  const ci=document.getElementById('bScoreCustom');
+  if(ci)ci.disabled=!useCustom;
+  let cust=parseFloat(ci&&ci.value);if(isNaN(cust))cust=0;cust=Math.min(Math.max(cust,0),100);
+  const sc=useCustom?cust:evalScore;
+  const V=(sc<T?0:elig*sc/100);
   g('bVcalc',fmtRub(V));
+  g('bScoreEval',evalScore.toFixed(1));
+  g('bScoreUsed',sc.toFixed(1)+(useCustom?' (произвольный)':' (из «Критериев»)')+(sc<T?` — ниже порога ${T}, V=0`:''));
   window.__bSum=S;window.__bElig=elig;
 }
 function showTab(name){
@@ -728,7 +746,9 @@ function save(){
       fmThreshold:document.getElementById('fmThreshold').value,
       smeta:smeta.map(r=>({id:r.id,sum:r.sum})),
       bld:bld.map(r=>({n:r.n,sum:r.sum,d:r.d})),
-      bldCols:bldCols.slice()
+      bldCols:bldCols.slice(),
+      bScoreChk:!!(document.getElementById('bScoreCustomChk')||{}).checked,
+      bScoreVal:(document.getElementById('bScoreCustom')||{}).value
     }));
     const s=document.getElementById('saved');
     if(s){const d=new Date();
@@ -752,6 +772,9 @@ function load(){
   });
   if(Array.isArray(d.bldCols)&&d.bldCols.length===7&&d.bldCols.every(x=>typeof x==='number'))
     bldCols=d.bldCols.slice();
+  const bck=document.getElementById('bScoreCustomChk'),bcv=document.getElementById('bScoreCustom');
+  if(bck&&typeof d.bScoreChk==='boolean')bck.checked=d.bScoreChk;
+  if(bcv&&d.bScoreVal!=null&&d.bScoreVal!=='')bcv.value=d.bScoreVal;
   if(d.state)Object.keys(d.state).forEach(id=>{
     if(state[id]&&d.state[id]&&typeof d.state[id].val==='number'){
       state[id]={opt:d.state[id].opt,val:d.state[id].val};
@@ -772,12 +795,16 @@ function resetAll(){
   bld=LIM23.map(L=>({n:L.n,sum:(BUILD_DEF[L.n]?BUILD_DEF[L.n].sum:0),d:(BUILD_DEF[L.n]?BUILD_DEF[L.n].d:'')}));
   bldCols=BCOLW_DEF.slice();
   document.getElementById('fmThreshold').value=60;
+  const bck=document.getElementById('bScoreCustomChk'),bcv=document.getElementById('bScoreCustom');
+  if(bck)bck.checked=false; if(bcv)bcv.value=75;
   renderSmeta();
   renderBuild();
   recalc();
 }
 document.getElementById('pname').addEventListener('input',save);
 document.getElementById('fmThreshold').addEventListener('input',recalc);
+document.getElementById('bScoreCustomChk').addEventListener('change',recalc);
+document.getElementById('bScoreCustom').addEventListener('input',recalc);
 renderLimRef();
 load();
 renderSmeta();
