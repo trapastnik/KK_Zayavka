@@ -99,9 +99,47 @@
   .fm .brk{font-size:11px;color:var(--mut);margin-top:9px;text-align:center;line-height:1.5}
   @media(max-width:980px){.wrap{grid-template-columns:1fr}aside{position:static}}
   @media print{aside{position:static}.btns{display:none}body{background:#fff}}
+  /* tabs */
+  .tabs{max-width:1240px;margin:18px auto 0;padding:0 18px;display:flex;gap:8px}
+  .tabs button{border:1px solid var(--line);background:#fff;border-bottom:none;
+    border-radius:12px 12px 0 0;padding:11px 20px;font-size:14px;font-weight:700;
+    color:var(--mut);cursor:pointer}
+  .tabs button.active{color:var(--blue);background:#fff;box-shadow:0 -2px 0 var(--blue) inset}
+  /* смета */
+  .smeta-wrap{max-width:1240px;margin:0 auto;padding:18px 18px 80px}
+  .sm-card{background:var(--panel);border:1px solid var(--line);border-radius:14px;
+    padding:20px;margin-bottom:18px;box-shadow:0 1px 3px rgba(15,23,42,.05)}
+  .sm-card h2{margin:0 0 4px;font-size:18px}
+  .sm-card .sub{font-size:12.5px;color:var(--mut);margin-bottom:14px}
+  table.sm{width:100%;border-collapse:collapse;font-size:12.5px}
+  table.sm th,table.sm td{border:1px solid var(--line);padding:7px 9px;vertical-align:top}
+  table.sm th{background:var(--hd);text-align:left;font-size:12px}
+  table.sm td.r,table.sm th.r{text-align:right;white-space:nowrap}
+  table.sm input{width:118px;text-align:right;border:1px solid var(--line);
+    border-radius:7px;padding:5px 7px;font-size:12.5px;font-weight:600}
+  table.sm tr.tot td{background:#f1f5f9;font-weight:800;font-size:13px}
+  .st{display:inline-block;padding:2px 8px;border-radius:11px;font-size:11px;font-weight:700}
+  .st.ok{background:var(--green-soft);color:var(--green)}
+  .st.warn{background:var(--amber-soft);color:var(--amber)}
+  .st.bad{background:var(--red-soft);color:var(--red)}
+  .sm-out{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:6px}
+  .sm-out .box{background:#f8fafc;border:1px solid var(--line);border-radius:10px;
+    padding:13px;text-align:center}
+  .sm-out .box .v{font-size:20px;font-weight:800}
+  .sm-out .box .k{font-size:11px;color:var(--mut);margin-top:3px}
+  .sm-out .box.hl .v{color:var(--green)}
+  details.lim{margin-top:6px}
+  details.lim summary{cursor:pointer;font-weight:700;font-size:13px;color:var(--blue)}
+  details.lim table{margin-top:10px}
+  @media(max-width:980px){.sm-out{grid-template-columns:1fr 1fr}}
 </style>
 </head>
 <body>
+<div class="tabs">
+  <button id="tabBtnEval" class="active" onclick="showTab('eval')">Критерии оценки</button>
+  <button id="tabBtnSmeta" onclick="showTab('smeta')">Смета и лимиты</button>
+</div>
+<div id="evalView">
 <div class="wrap">
   <header class="top">
     <h1>Калькулятор оценки проекта по критериям Комитета по культуре СПб</h1>
@@ -122,11 +160,11 @@
       <div class="mini" id="mini"></div>
     </div>
     <div class="fm">
-      <h3>Финансовая модель</h3>
-      <div class="row"><label for="fmBudget">Общий бюджет, ₽</label><input id="fmBudget" type="number" min="0" step="1000" value="12062000"></div>
+      <h3>Финансовая модель (§ 8 № 189)</h3>
       <div class="row"><label for="fmThreshold">Порог допуска, баллов</label><input id="fmThreshold" type="number" min="0" max="100" step="1" value="60"></div>
-      <div class="out"><div class="num" id="fmSubsidy">0 ₽</div><div class="lbl">Расчётная субсидия (бюджет СПб) по итоговому баллу</div></div>
+      <div class="out"><div class="num" id="fmSubsidy">0 ₽</div><div class="lbl">V<sub>расчёт</sub> = S<sub>годная</sub> × балл / 100</div></div>
       <div class="brk" id="fmBreak"></div>
+      <input id="fmBudget" type="hidden" value="12062000">
     </div>
     <div class="rec">
       <h3>Что подкрутить</h3>
@@ -140,6 +178,32 @@
     <div class="legend" id="saved">✓ Выбор сохраняется автоматически в этом браузере</div>
     <div class="legend">Предзаполнено консервативной экспертной оценкой по тексту КП. «Сбросить» очищает сохранённое.</div>
   </aside>
+</div>
+</div>
+
+<div id="smetaView" class="smeta-wrap" style="display:none">
+  <div class="sm-card">
+    <h2>Смета проекта и проверка лимитов (постановление № 189, Приложение № 1)</h2>
+    <div class="sub">Редактируйте суммы — лимиты и итог пересчитываются. Лимит = % от итоговой суммы субсидии (S). Группы с общим направлением проверяются суммарно.</div>
+    <table class="sm" id="smTable"></table>
+  </div>
+  <div class="sm-card">
+    <h2>Расчёт субсидии от баллов (§ 8 постановления № 189)</h2>
+    <div class="sub">V<sub>расчёт</sub> = (S<sub>годная</sub> × Балл) / 100, при Балл ≥ порога. Итоговая V<sub>итог</sub> = V<sub>расчёт</sub> × K (понижающий коэффициент при нехватке общего бюджета — зависит от всех заявок, здесь K=1).</div>
+    <div class="sm-out">
+      <div class="box"><div class="v" id="smRaw">0 ₽</div><div class="k">S — запрошено (смета)</div></div>
+      <div class="box"><div class="v" id="smElig">0 ₽</div><div class="k">S<sub>годная</sub> — после лимитов и вычета нецелевых</div></div>
+      <div class="box"><div class="v" id="smScore">0</div><div class="k">Итоговый балл (вкладка «Критерии»)</div></div>
+      <div class="box hl"><div class="v" id="smSub">0 ₽</div><div class="k">V<sub>расчёт</sub> по формуле № 189</div></div>
+    </div>
+    <div class="sub" id="smNote" style="margin-top:14px"></div>
+  </div>
+  <div class="sm-card">
+    <details class="lim">
+      <summary>Справочник: 23 направления затрат и предельные объёмы (Приложение № 1 к Порядку 1)</summary>
+      <table class="sm" id="smLimRef"></table>
+    </details>
+  </div>
 </div>
 
 <script>
@@ -322,29 +386,144 @@ function cf41(){
     return op&&typeof op.cf==='number'?op.cf:0;
   }catch(e){return 0;}
 }
-function finModel(S){
-  const B=+document.getElementById('fmBudget').value||0;
+/* ===== СМЕТА И ЛИМИТЫ (постановление № 189, Приложение № 1) ===== */
+const NAPR={
+ p1 :{p:1.00,t:'п.1 Аренда территорий/помещений/сцен. площадок, тех. обеспечение'},
+ p4 :{p:0.40,t:'п.4 Аренда тех./технологического оборудования (свет/звук/видео)'},
+ p5 :{p:0.30,t:'п.5 Создание (съёмка, монтаж) видеоматериалов, в т.ч. онлайн'},
+ p8 :{p:0.50,t:'п.8 Услуги артистов, творческих специалистов и коллективов'},
+ p11:{p:0.15,t:'п.11 Режиссёрско-постановочная группа, кураторы (ГПХ)'},
+ p12:{p:0.05,t:'п.12 Админ.-хоз. персонал, продвижение/реклама/дизайн (ГПХ)'},
+ p13:{p:0.10,t:'п.13 Разработка/изготовление рекламных и информац. материалов'},
+ p14:{p:0.10,t:'п.14 Размещение рекламы, контекст/таргет в сети «Интернет»'},
+ p16:{p:0.05,t:'п.16 Сувенирная продукция'},
+ p18:{p:0.15,t:'п.18 Безопасность, уборка, биотуалеты, скорая помощь'},
+ p19:{p:0.01,t:'п.19 Расходные материалы'},
+ p20:{p:0.02,t:'п.20 Вознаграждение за авторские и смежные права'},
+ p21:{p:0.05,t:'п.21 Оплата труда штатных работников получателя'},
+ none:{p:null,t:'Нет в перечне 23 направлений → нецелевые (вычитаются, п.8.4)'}
+};
+const SMETA_DEF=[
+ {id:'s1',n:'Аренда VR-оборудования с лицензионной медиатекой',sum:3500000,code:'p4',note:'медиатека ~39 ед. — часть может квалифицироваться как п.20 (до 2%)'},
+ {id:'s2',n:'Производство собственного VR-контента (15 фильмов)',sum:5949000,code:'p5',note:'гонорары артистов Капеллы можно переквалифицировать в п.8 (до 50%)'},
+ {id:'s3',n:'Лицензия: ПАО «Газпром» (Китайский дворец)',sum:0,code:'p20'},
+ {id:'s4',n:'Лицензия: АО «ВодоходЪ» (Петергоф VR)',sum:200000,code:'p20'},
+ {id:'s5',n:'Лицензия: ООО «АРКА» (Эрмитаж VR)',sum:300000,code:'p20'},
+ {id:'s6',n:'Маркетинг, SMM, PR, сайт',sum:700000,code:'p13'},
+ {id:'s7',n:'Персонал на VR-точках и координация',sum:2920000,code:'p12',note:'помощники-консультанты оператора фактически субсидией не финансируются'},
+ {id:'s8',n:'Расходные материалы',sum:130000,code:'p19'},
+ {id:'s9',n:'Оформление точек показа',sum:220000,code:'p13'},
+ {id:'s10',n:'Логистика и страхование оборудования',sum:130000,code:'none'},
+ {id:'s11',n:'Операционные расходы НКО (юр., связь/банк, руководитель)',sum:540000,code:'p21',note:'юр./связь/банк/офис НКО — вне перечня; руководитель — п.21 (до 5%)'}
+];
+let smeta=SMETA_DEF.map(r=>({...r}));
+const LIMREF=[
+ [1,'Аренда территорий, помещений, сценических площадок; техническое обеспечение','до 100%'],
+ [2,'Сценические и другие конструкции (аренда, изготовление, монтаж, доставка)','до 100%'],
+ [3,'Художественно-декорационное оформление','до 50%'],
+ [4,'Свет/звук/видео-сопровождение, аренда тех. и технологического оборудования','до 40% (до 70% для мультимедийного проекта)'],
+ [5,'Создание (съёмка, монтаж) видеоматериалов, в т.ч. онлайн','до 30%'],
+ [6,'ТВ-съёмка/трансляция, интернет-платформа, видеоверсия','до 20%'],
+ [7,'Костюмы, реквизит, бутафория','до 20%'],
+ [8,'Услуги артистов, творческих специалистов и коллективов','до 50%'],
+ [9,'Проживание артистов (≤ 8 000 ₽/сутки/чел)','до 50%'],
+ [10,'Транспорт/трансфер артистов (эконом)','до 20%'],
+ [11,'Режиссёрско-постановочная группа, кураторы (ГПХ)','до 15%'],
+ [12,'Админ.-хоз. персонал, продвижение/реклама/дизайн (ГПХ)','до 5%'],
+ [13,'Разработка/изготовление рекламных и информац. материалов','до 10% (до 30% при тираже >100 000 экз.)'],
+ [14,'Размещение рекламы, контекст/таргет в сети «Интернет»','до 10%'],
+ [15,'Спецэффекты','до 1%'],
+ [16,'Сувенирная (в т.ч. цветочная) продукция','до 5%'],
+ [17,'Призы победителям конкурсов (фестивалей)','до 15%'],
+ [18,'Безопасность, уборка, биотуалеты, скорая помощь','до 15%'],
+ [19,'Расходные материалы','до 1% (до 5% для выставок/мастер-классов)'],
+ [20,'Вознаграждение за использование авторских и смежных прав','до 2%'],
+ [21,'Оплата труда штатных работников получателя','до 5%'],
+ [22,'Коммунальные расходы (электро/тепло/вода)','до 3%'],
+ [23,'Услуги сурдо- и тифлопереводчиков','до 3%']
+];
+function renderLimRef(){
+  const el=document.getElementById('smLimRef');if(!el)return;
+  el.innerHTML='<tr><th class="r">№</th><th>Направление затрат</th><th>Предельный объём (% от суммы субсидии)</th></tr>'+
+    LIMREF.map(r=>`<tr><td class="r">${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td></tr>`).join('');
+}
+function renderSmeta(){
+  const el=document.getElementById('smTable');if(!el)return;
+  el.innerHTML='<tr><th>Статья сметы</th><th class="r">Сумма, ₽</th>'+
+    '<th>Направление затрат (№ 189)</th><th class="r">Лимит группы</th>'+
+    '<th class="r">Факт по группе</th><th>Статус</th></tr>'+
+    smeta.map(r=>`<tr data-row="${r.id}">
+      <td>${r.n}${r.note?`<div style="color:var(--mut);font-size:11px;margin-top:3px">${r.note}</div>`:''}</td>
+      <td class="r"><input type="number" min="0" step="1000" id="sm_${r.id}" value="${r.sum}"></td>
+      <td>${NAPR[r.code].t}</td>
+      <td class="r" id="cap_${r.id}">—</td>
+      <td class="r" id="fact_${r.id}">—</td>
+      <td id="stat_${r.id}">—</td></tr>`).join('')+
+    `<tr class="tot"><td>ИТОГО запрошенная субсидия (S)</td><td class="r" id="smTotRow">—</td>
+      <td colspan="4">после лимитов и вычета нецелевых → S<sub>годная</sub> (см. ниже)</td></tr>`;
+  smeta.forEach(r=>{
+    const inp=document.getElementById('sm_'+r.id);
+    if(inp)inp.addEventListener('input',()=>{r.sum=+inp.value||0;recalc();});
+  });
+}
+function recalcSmeta(){
+  let rawS=0;const spend={};
+  smeta.forEach(r=>{rawS+=r.sum;spend[r.code]=(spend[r.code]||0)+r.sum;});
+  const capOf={},eligOf={};
+  Object.keys(spend).forEach(c=>{
+    const p=NAPR[c].p;
+    capOf[c]=(p==null)?0:p*rawS;
+    eligOf[c]=(p==null)?0:Math.min(spend[c],capOf[c]);
+  });
+  let eligS=0;Object.keys(eligOf).forEach(c=>eligS+=eligOf[c]);
+  smeta.forEach(r=>{
+    const c=r.code,p=NAPR[c].p,sp=spend[c],cap=capOf[c];
+    const capEl=document.getElementById('cap_'+r.id),
+          facEl=document.getElementById('fact_'+r.id),
+          stEl=document.getElementById('stat_'+r.id);
+    if(!capEl)return;
+    capEl.textContent=(p==null)?'—':`${fmtRub(cap)} (${(p*100).toFixed(0)}%)`;
+    facEl.textContent=`${fmtRub(sp)} (${rawS?((sp/rawS)*100).toFixed(1):0}%)`;
+    if(p==null){stEl.innerHTML='<span class="st bad">нецелевые</span>';}
+    else if(sp<=cap+0.5){stEl.innerHTML='<span class="st ok">в лимите</span>';}
+    else {stEl.innerHTML=`<span class="st bad">превышение группы −${fmtRub(sp-cap)}</span>`;}
+  });
+  const tr=document.getElementById('smTotRow');if(tr)tr.textContent=fmtRub(rawS);
+  const a=document.getElementById('smRaw'),b=document.getElementById('smElig');
+  if(a)a.textContent=fmtRub(rawS);
+  if(b)b.textContent=fmtRub(eligS);
+  const hid=document.getElementById('fmBudget');if(hid)hid.value=Math.round(rawS);
+  window.__rawS=rawS;window.__eligS=eligS;
+}
+function finModel(score){
   let T=parseFloat(document.getElementById('fmThreshold').value);
-  if(isNaN(T))T=0; T=Math.min(Math.max(T,0),100);
-  const c=cf41();
-  const Sd=Math.round(S*10)/10;            // балл как в карточке (округление до 0,1)
-  const cofin=B*c;                         // сумма софинансирования = доля × бюджет
-  let base = Sd<T ? 0 : B*(Sd/100);        // бюджет × балл/100
-  if(!isFinite(base)||base<0)base=0;
-  let sub = base - cofin;
-  if(!isFinite(sub)||sub<0)sub=0;
-  document.getElementById('fmSubsidy').textContent=fmtRub(sub);
+  if(isNaN(T))T=0;T=Math.min(Math.max(T,0),100);
+  const Sd=Math.round(score*10)/10;
+  const elig=window.__eligS||0, raw=window.__rawS||0;
+  let V = Sd<T ? 0 : elig*(Sd/100);
+  if(!isFinite(V)||V<0)V=0;
+  document.getElementById('fmSubsidy').textContent=fmtRub(V);
   const brk=document.getElementById('fmBreak');
-  if(Sd<T){
-    brk.textContent=`Итоговый балл ${Sd} ниже порога ${T} → субсидия 0 ₽.`;
-  }else{
-    brk.innerHTML=`Бюджет ${fmtRub(B)} × ${Sd}/100 = ${fmtRub(base)}.<br>`+
-      (c>0
-        ? `Минус софинансирование ${(c*100).toFixed(0)}% (−${fmtRub(cofin)}) = ${fmtRub(sub)}.`
-        : `Софинансирование не выбрано (−0 ₽) = ${fmtRub(sub)}.`);
-  }
+  if(Sd<T) brk.textContent=`Балл ${Sd} ниже порога ${T} → субсидия 0 ₽.`;
+  else brk.innerHTML=`S<sub>годная</sub> ${fmtRub(elig)} × ${Sd}/100 = <b>${fmtRub(V)}</b> (до K).`;
+  const sc=document.getElementById('smScore'),su=document.getElementById('smSub');
+  if(sc)sc.textContent=Sd.toFixed(1);
+  if(su)su.textContent=fmtRub(V);
+  const nt=document.getElementById('smNote');
+  if(nt)nt.innerHTML=(raw>elig
+     ?`⚠️ Из запрошенных <b>${fmtRub(raw)}</b> к финансированию годны <b>${fmtRub(elig)}</b>: ${fmtRub(raw-elig)} срезано лимитами/нецелевыми (п. 8.4 № 189, риск 0 баллов по критерию 4.2). `
+     :`Все статьи в пределах лимитов. `)+
+     (Sd<T?`Балл ниже порога допуска ${T} — заявка не побеждает.`
+      :`При совокупном превышении бюджета пула применяется единый понижающий коэффициент K = P / ΣV (здесь K=1).`);
   const bdg=document.getElementById('badge');
-  if(bdg)bdg.textContent=`Бюджет ${fmtRub(B)} · расчётная субсидия ${fmtRub(sub)}`;
+  if(bdg)bdg.textContent=`S ${fmtRub(raw)} · годная ${fmtRub(elig)} · V₍расч₎ ${fmtRub(V)}`;
+}
+function showTab(name){
+  const ev=document.getElementById('evalView'),sm=document.getElementById('smetaView');
+  const be=document.getElementById('tabBtnEval'),bs=document.getElementById('tabBtnSmeta');
+  const e=name==='eval';
+  ev.style.display=e?'':'none';sm.style.display=e?'none':'';
+  be.classList.toggle('active',e);bs.classList.toggle('active',!e);
 }
 
 function recalc(){
@@ -388,6 +567,7 @@ function recalc(){
         <span class="gain ${r.gain<0.05?'zero':''}">${r.gain<0.05?'максимум':'+'+r.gain.toFixed(2)+' б.'}</span></div>
       <div>${r.h.replace(/^[\d.]+\s*/,'')} — сейчас ${r.cur}/100</div>
     </div>`).join('');
+  recalcSmeta();
   finModel(total);
   save();
 }
@@ -397,8 +577,8 @@ function save(){
   try{
     localStorage.setItem(LSKEY,JSON.stringify({
       pname:document.getElementById('pname').value, state:state,
-      fmBudget:document.getElementById('fmBudget').value,
-      fmThreshold:document.getElementById('fmThreshold').value
+      fmThreshold:document.getElementById('fmThreshold').value,
+      smeta:smeta.map(r=>({id:r.id,sum:r.sum}))
     }));
     const s=document.getElementById('saved');
     if(s){const d=new Date();
@@ -411,8 +591,11 @@ function load(){
   if(!raw)return;
   let d;try{d=JSON.parse(raw);}catch(e){return;}
   if(d.pname)document.getElementById('pname').value=d.pname;
-  if(d.fmBudget!=null&&d.fmBudget!=='')document.getElementById('fmBudget').value=d.fmBudget;
   if(d.fmThreshold!=null&&d.fmThreshold!=='')document.getElementById('fmThreshold').value=d.fmThreshold;
+  if(Array.isArray(d.smeta))d.smeta.forEach(sv=>{
+    const r=smeta.find(x=>x.id===sv.id);
+    if(r&&typeof sv.sum==='number')r.sum=sv.sum;
+  });
   if(d.state)Object.keys(d.state).forEach(id=>{
     if(state[id]&&d.state[id]&&typeof d.state[id].val==='number'){
       state[id]={opt:d.state[id].opt,val:d.state[id].val};
@@ -429,14 +612,16 @@ function resetAll(){
     const inp=document.querySelector(`.opt[data-b="${b.id}"][data-o="${b.def}"] input`);
     if(inp)inp.checked=true;
   }));
-  document.getElementById('fmBudget').value=12062000;
+  smeta=SMETA_DEF.map(r=>({...r}));
   document.getElementById('fmThreshold').value=60;
+  renderSmeta();
   recalc();
 }
 document.getElementById('pname').addEventListener('input',save);
-document.getElementById('fmBudget').addEventListener('input',recalc);
 document.getElementById('fmThreshold').addEventListener('input',recalc);
+renderLimRef();
 load();
+renderSmeta();
 recalc();
 </script>
 </body>
