@@ -118,6 +118,20 @@
   table.sm input{width:118px;text-align:right;border:1px solid var(--line);
     border-radius:7px;padding:5px 7px;font-size:12.5px;font-weight:600}
   table.sm tr.tot td{background:#f1f5f9;font-weight:800;font-size:13px}
+  /* конструктор: фикс-раскладка, перетаскиваемые столбцы, полное описание */
+  .bldscroll{overflow-x:auto;max-width:100%}
+  table.sm.bld{table-layout:fixed;width:auto}
+  table.sm.bld th{position:relative}
+  table.sm.bld td,table.sm.bld th{overflow:hidden;text-overflow:ellipsis}
+  table.sm.bld td.desc,table.sm.bld td.stc{white-space:normal;overflow:visible;text-overflow:clip}
+  table.sm.bld td.desc{vertical-align:top}
+  table.sm.bld textarea{width:100%;min-height:62px;box-sizing:border-box;
+    border:1px solid var(--line);border-radius:7px;padding:5px 7px;
+    font:inherit;font-size:12px;line-height:1.35;resize:vertical}
+  table.sm.bld td.stc .st{white-space:normal;line-height:1.4}
+  .colrz{position:absolute;top:0;right:-4px;width:8px;height:100%;cursor:col-resize;
+    touch-action:none;z-index:3}
+  .colrz:hover,.colrz:active{background:rgba(29,78,216,.35)}
   .st{display:inline-block;padding:2px 8px;border-radius:11px;font-size:11px;font-weight:700}
   .st.ok{background:var(--green-soft);color:var(--green)}
   .st.warn{background:var(--amber-soft);color:var(--amber)}
@@ -217,7 +231,8 @@
       <div class="box"><div class="v" id="bOver">0</div><div class="k">строк с превышением</div></div>
       <div class="box"><div class="v" id="bVcalc">0 ₽</div><div class="k">V<sub>расчёт</sub> = S<sub>годная</sub> × балл/100</div></div>
     </div>
-    <table class="sm" id="bldTable"></table>
+    <div class="sub" style="margin:0 0 8px;color:var(--blue)">↔ Ширину столбцов «Направление», «Описание», «Сумма», «% от S», «Лимит ₽» можно тянуть за правый край заголовка.</div>
+    <div class="bldscroll"><table class="sm bld" id="bldTable"></table></div>
     <div class="sub" style="margin-top:12px">Лимиты с вариативом: п.4 — до 70 % для мультимедийного проекта; п.13 — до 30 % при тираже одного наименования &gt; 100 000 экз.; п.19 — до 5 % для выставок/мастер-классов. В расчёте взят базовый %.</div>
   </div>
 </div>
@@ -573,20 +588,47 @@ const BUILD_DEF={
  21:{sum:650000,  d:'Оплата труда штатных работников НКО (директор, бухгалтер, ответственные за мероприятие) за период'}
 };
 let bld=LIM23.map(L=>({n:L.n, sum:(BUILD_DEF[L.n]?BUILD_DEF[L.n].sum:0), d:(BUILD_DEF[L.n]?BUILD_DEF[L.n].d:'')}));
+const BCOLW_DEF=[46,300,380,140,80,150,210];   // №,Направление,Описание,Сумма,%S,Лимит₽,Статус
+let bldCols=BCOLW_DEF.slice();
+function applyBldCols(){
+  const t=document.getElementById('bldTable');if(!t)return;
+  const cols=t.querySelectorAll('colgroup col');let tot=0;
+  bldCols.forEach((w,i)=>{if(cols[i])cols[i].style.width=w+'px';tot+=w;});
+  t.style.width=tot+'px';
+}
+function attachBldResizers(){
+  const t=document.getElementById('bldTable');if(!t)return;
+  t.querySelectorAll('.colrz').forEach(h=>{
+    h.addEventListener('pointerdown',e=>{
+      e.preventDefault();
+      const ci=+h.dataset.c, sx=e.clientX, sw=bldCols[ci];
+      const mv=ev=>{bldCols[ci]=Math.max(40,Math.round(sw+(ev.clientX-sx)));applyBldCols();};
+      const up=()=>{document.removeEventListener('pointermove',mv);
+                    document.removeEventListener('pointerup',up);save();};
+      document.addEventListener('pointermove',mv);
+      document.addEventListener('pointerup',up);
+    });
+  });
+}
 function renderBuild(){
   const el=document.getElementById('bldTable');if(!el)return;
-  el.innerHTML='<tr><th class="r">№</th><th>Направление затрат (лимит)</th><th>Ваше описание</th>'+
-    '<th class="r">Ваша сумма, ₽</th><th class="r">% от S</th><th class="r">Лимит ₽</th><th>Статус</th></tr>'+
+  el.className='sm bld';
+  const rz=c=>`<span class="colrz" data-c="${c}" title="Потянуть, чтобы изменить ширину"></span>`;
+  el.innerHTML='<colgroup>'+bldCols.map(w=>`<col style="width:${w}px">`).join('')+'</colgroup>'+
+    `<tr><th class="r">№</th><th>Направление затрат (лимит)${rz(1)}</th>`+
+    `<th>Ваше описание${rz(2)}</th><th class="r">Ваша сумма, ₽${rz(3)}</th>`+
+    `<th class="r">% от S${rz(4)}</th><th class="r">Лимит ₽${rz(5)}</th><th>Статус</th></tr>`+
     bld.map((r,i)=>{const L=LIM23[i];return `<tr>
       <td class="r">${L.n}</td>
       <td>${L.t}<div style="color:var(--mut);font-size:11px;margin-top:2px">лимит ${(L.f*100).toFixed(0)}% от S</div></td>
-      <td><input type="text" id="bd_${L.n}" value="${(r.d||'').replace(/"/g,'&quot;')}" style="width:99%;text-align:left"></td>
+      <td class="desc"><textarea id="bd_${L.n}" rows="3" placeholder="ваше описание затрат по направлению…">${(r.d||'').replace(/&/g,'&amp;').replace(/</g,'&lt;')}</textarea></td>
       <td class="r"><input type="number" min="0" step="1000" id="bs_${L.n}" value="${r.sum}"></td>
       <td class="r" id="bp_${L.n}">—</td>
       <td class="r" id="bl_${L.n}">—</td>
-      <td id="bst_${L.n}">—</td></tr>`;}).join('')+
+      <td class="stc" id="bst_${L.n}">—</td></tr>`;}).join('')+
     `<tr class="tot"><td></td><td>ИТОГО (S)</td><td></td><td class="r" id="bSum">—</td><td class="r">100%</td>
-      <td class="r" id="bEligRow">—</td><td id="bStatRow">—</td></tr>`;
+      <td class="r" id="bEligRow">—</td><td class="stc" id="bStatRow">—</td></tr>`;
+  applyBldCols();attachBldResizers();
   bld.forEach(r=>{
     const si=document.getElementById('bs_'+r.n),di=document.getElementById('bd_'+r.n);
     if(si)si.addEventListener('input',()=>{r.sum=+si.value||0;recalc();});
@@ -685,7 +727,8 @@ function save(){
       pname:document.getElementById('pname').value, state:state,
       fmThreshold:document.getElementById('fmThreshold').value,
       smeta:smeta.map(r=>({id:r.id,sum:r.sum})),
-      bld:bld.map(r=>({n:r.n,sum:r.sum,d:r.d}))
+      bld:bld.map(r=>({n:r.n,sum:r.sum,d:r.d})),
+      bldCols:bldCols.slice()
     }));
     const s=document.getElementById('saved');
     if(s){const d=new Date();
@@ -707,6 +750,8 @@ function load(){
     const r=bld.find(x=>x.n===bv.n);
     if(r){if(typeof bv.sum==='number')r.sum=bv.sum;if(typeof bv.d==='string')r.d=bv.d;}
   });
+  if(Array.isArray(d.bldCols)&&d.bldCols.length===7&&d.bldCols.every(x=>typeof x==='number'))
+    bldCols=d.bldCols.slice();
   if(d.state)Object.keys(d.state).forEach(id=>{
     if(state[id]&&d.state[id]&&typeof d.state[id].val==='number'){
       state[id]={opt:d.state[id].opt,val:d.state[id].val};
@@ -725,6 +770,7 @@ function resetAll(){
   }));
   smeta=SMETA_DEF.map(r=>({...r}));
   bld=LIM23.map(L=>({n:L.n,sum:(BUILD_DEF[L.n]?BUILD_DEF[L.n].sum:0),d:(BUILD_DEF[L.n]?BUILD_DEF[L.n].d:'')}));
+  bldCols=BCOLW_DEF.slice();
   document.getElementById('fmThreshold').value=60;
   renderSmeta();
   renderBuild();
