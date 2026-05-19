@@ -732,62 +732,63 @@ function recalcBuild(){
   window.__bSum=S;window.__bElig=elig;
 }
 /* ===== ДЕТАЛЬНЫЙ БЮДЖЕТ + ГЕНЕРАТОР КП ===== */
-const DTL_VER=5;
+const DTL_VER=6;
+const PMON=4; // срок проекта, мес (база для пересчёта; редактируется по строке)
 const DTL_DEF=[
  {g:'Производство — БОЛЬШОЙ формат (3 фильма: оркестр Капеллы, орган с интерактивом регистров)', rows:[
-   {name:'Режиссёрско-постановочная работа (большой формат)',unit:'фильм',qty:3,rate:110000,dir:11,tf:'gph'},
-   {name:'Операторская многокамерная съёмка 360° (большой формат)',unit:'фильм',qty:3,rate:200000,dir:5,tf:'gph'},
-   {name:'Стич/сборка 360° + видеомонтаж (большой формат)',unit:'фильм',qty:3,rate:160000,dir:5,tf:''},
-   {name:'Цветокоррекция, мастеринг (большой формат)',unit:'фильм',qty:3,rate:35000,dir:5,tf:''},
-   {name:'Саунд-дизайн, запись и сведение звука (большой формат)',unit:'фильм',qty:3,rate:45000,dir:5,tf:''},
-   {name:'Программирование интерактива (орган с регистрами, навигация)',unit:'фильм',qty:2,rate:250000,dir:5,tf:''},
-   {name:'Компьютерная графика, титры, оформление кадра (большой формат)',unit:'фильм',qty:3,rate:45000,dir:5,tf:''},
-   {name:'Гонорары артистов и творческих специалистов (большой формат)',unit:'фильм',qty:3,rate:130000,dir:8,tf:'gph'}]},
+   {name:'Режиссёрско-постановочная работа (большой формат)',unit:'фильм',qty:3,rate:110000,mon:1,dir:11,tf:'gph'},
+   {name:'Операторская многокамерная съёмка 360° (большой формат)',unit:'фильм',qty:3,rate:200000,mon:1,dir:5,tf:'gph'},
+   {name:'Стич/сборка 360° + видеомонтаж (большой формат)',unit:'фильм',qty:3,rate:160000,mon:1,dir:5,tf:''},
+   {name:'Цветокоррекция, мастеринг (большой формат)',unit:'фильм',qty:3,rate:35000,mon:1,dir:5,tf:''},
+   {name:'Саунд-дизайн, запись и сведение звука (большой формат)',unit:'фильм',qty:3,rate:45000,mon:1,dir:5,tf:''},
+   {name:'Программирование интерактива (орган с регистрами, навигация)',unit:'фильм',qty:2,rate:250000,mon:1,dir:5,tf:''},
+   {name:'Компьютерная графика, титры, оформление кадра (большой формат)',unit:'фильм',qty:3,rate:45000,mon:1,dir:5,tf:''},
+   {name:'Гонорары артистов и творческих специалистов (большой формат)',unit:'фильм',qty:3,rate:130000,mon:1,dir:8,tf:'gph'}]},
  {g:'Производство — СРЕДНИЙ формат (5 фильмов: хор Капеллы, мастер-класс ИКП, отчётный концерт)', rows:[
-   {name:'Режиссёрско-постановочная работа (средний формат)',unit:'фильм',qty:5,rate:60000,dir:11,tf:'gph'},
-   {name:'Операторская съёмка 360° (средний формат)',unit:'фильм',qty:5,rate:95000,dir:5,tf:'gph'},
-   {name:'Стич/сборка 360° + видеомонтаж (средний формат)',unit:'фильм',qty:5,rate:80000,dir:5,tf:''},
-   {name:'Цветокоррекция, мастеринг (средний формат)',unit:'фильм',qty:5,rate:18000,dir:5,tf:''},
-   {name:'Саунд-дизайн, запись и сведение звука (средний формат)',unit:'фильм',qty:5,rate:22000,dir:5,tf:''},
-   {name:'Компьютерная графика, титры (средний формат)',unit:'фильм',qty:5,rate:20000,dir:5,tf:''},
-   {name:'Гонорары артистов и творческих специалистов (средний формат)',unit:'фильм',qty:5,rate:60000,dir:8,tf:'gph'}]},
+   {name:'Режиссёрско-постановочная работа (средний формат)',unit:'фильм',qty:5,rate:60000,mon:1,dir:11,tf:'gph'},
+   {name:'Операторская съёмка 360° (средний формат)',unit:'фильм',qty:5,rate:95000,mon:1,dir:5,tf:'gph'},
+   {name:'Стич/сборка 360° + видеомонтаж (средний формат)',unit:'фильм',qty:5,rate:80000,mon:1,dir:5,tf:''},
+   {name:'Цветокоррекция, мастеринг (средний формат)',unit:'фильм',qty:5,rate:18000,mon:1,dir:5,tf:''},
+   {name:'Саунд-дизайн, запись и сведение звука (средний формат)',unit:'фильм',qty:5,rate:22000,mon:1,dir:5,tf:''},
+   {name:'Компьютерная графика, титры (средний формат)',unit:'фильм',qty:5,rate:20000,mon:1,dir:5,tf:''},
+   {name:'Гонорары артистов и творческих специалистов (средний формат)',unit:'фильм',qty:5,rate:60000,mon:1,dir:8,tf:'gph'}]},
  {g:'Производство — МАЛЫЙ формат (7 фильмов: экскурсии по Капелле/Маяковке, «Кулисы»)', rows:[
-   {name:'Режиссёрско-постановочная работа (малый формат)',unit:'фильм',qty:7,rate:30000,dir:11,tf:'gph'},
-   {name:'Операторская съёмка 360° (малый формат)',unit:'фильм',qty:7,rate:45000,dir:5,tf:'gph'},
-   {name:'Стич/сборка 360° + видеомонтаж (малый формат)',unit:'фильм',qty:7,rate:40000,dir:5,tf:''},
-   {name:'Цветокоррекция, мастеринг (малый формат)',unit:'фильм',qty:7,rate:9000,dir:5,tf:''},
-   {name:'Саунд-дизайн, сведение звука (малый формат)',unit:'фильм',qty:7,rate:12000,dir:5,tf:''},
-   {name:'Компьютерная графика, титры (малый формат)',unit:'фильм',qty:7,rate:10000,dir:5,tf:''},
-   {name:'Гонорары ведущих/творческих специалистов (малый формат)',unit:'фильм',qty:7,rate:20000,dir:8,tf:'gph'}]},
+   {name:'Режиссёрско-постановочная работа (малый формат)',unit:'фильм',qty:7,rate:30000,mon:1,dir:11,tf:'gph'},
+   {name:'Операторская съёмка 360° (малый формат)',unit:'фильм',qty:7,rate:45000,mon:1,dir:5,tf:'gph'},
+   {name:'Стич/сборка 360° + видеомонтаж (малый формат)',unit:'фильм',qty:7,rate:40000,mon:1,dir:5,tf:''},
+   {name:'Цветокоррекция, мастеринг (малый формат)',unit:'фильм',qty:7,rate:9000,mon:1,dir:5,tf:''},
+   {name:'Саунд-дизайн, сведение звука (малый формат)',unit:'фильм',qty:7,rate:12000,mon:1,dir:5,tf:''},
+   {name:'Компьютерная графика, титры (малый формат)',unit:'фильм',qty:7,rate:10000,mon:1,dir:5,tf:''},
+   {name:'Гонорары ведущих/творческих специалистов (малый формат)',unit:'фильм',qty:7,rate:20000,mon:1,dir:8,tf:'gph'}]},
  {g:'Производство — лицензии и накладные (общие)', rows:[
-   {name:'Лицензии на музыку и смежные права в собственном контенте, согласования',unit:'усл.',qty:1,rate:99000,dir:20,tf:''}]},
+   {name:'Лицензии на музыку и смежные права в собственном контенте, согласования',unit:'усл.',qty:1,rate:99000,mon:1,dir:20,tf:''}]},
  {g:'Аренда VR-инфраструктуры и съёмочного оборудования', rows:[
-   {name:'Аренда камеры/риг 360° для съёмок VR-контента',unit:'съём. день',qty:15,rate:60000,dir:4,tf:''},
-   {name:'Аренда VR-комплекта (единый договор аренды/услуг технологического партнёра): 35 шлемов Pico 4 + комплекты управления + уникальное ПО управления парком и сценариями + лицензионная медиатека ~39 ед. + пуско-наладка, обучение, техсопровождение. Бандл — п.4 (аренда тех./технол. оборудования), не выделять медиатеку в п.20.',unit:'договор·период',qty:1,rate:3500000,dir:4,tf:''}]},
+   {name:'Аренда камеры/риг 360° для съёмок VR-контента',unit:'съём. день',qty:15,rate:60000,mon:1,dir:4,tf:''},
+   {name:'Аренда VR-комплекта (единый договор аренды/услуг технологического партнёра): 35 шлемов Pico 4 + комплекты управления + уникальное ПО управления парком и сценариями + лицензионная медиатека ~39 ед. + пуско-наладка, обучение, техсопровождение. Бандл — п.4 (аренда тех./технол. оборудования), не выделять медиатеку в п.20.',unit:'договор/мес',qty:1,rate:875000,mon:4,dir:4,tf:''}]},
  {g:'Лицензионные премиальные VR-проекты для показа (сторонние правообладатели, п.20)', rows:[
-   {name:'Лицензия показа «Китайский дворец» (ПАО «Газпром») — безвозмездно (натуральный вклад, в смете 0)',unit:'лиц.',qty:1,rate:0,dir:20,tf:''},
-   {name:'Лицензия показа «Петергоф VR» (АО «ВодоходЪ»)',unit:'лиц.',qty:1,rate:200000,dir:20,tf:''},
-   {name:'Лицензия показа «Эрмитаж VR» (ООО «АРКА»)',unit:'лиц.',qty:1,rate:300000,dir:20,tf:''}]},
+   {name:'Лицензия показа «Китайский дворец» (ПАО «Газпром») — безвозмездно (натуральный вклад, в смете 0)',unit:'лиц.',qty:1,rate:0,mon:1,dir:20,tf:''},
+   {name:'Лицензия показа «Петергоф VR» (АО «ВодоходЪ»)',unit:'лиц.',qty:1,rate:200000,mon:1,dir:20,tf:''},
+   {name:'Лицензия показа «Эрмитаж VR» (ООО «АРКА»)',unit:'лиц.',qty:1,rate:300000,mon:1,dir:20,tf:''}]},
  {g:'Персонал по договорам (форма — по строке: ГПХ / ИП)', rows:[
-   {name:'Куратор VR-десанта',unit:'чел·мес',qty:4,rate:50000,dir:11,tf:'gph'},
-   {name:'Координатор по партнёрам и площадкам',unit:'чел·мес',qty:4,rate:40000,dir:11,tf:'gph'},
-   {name:'Кураторы-медиаторы точек показа (творческое сопровождение, 6 точек × 4 мес)',unit:'чел·мес',qty:24,rate:40000,dir:11,tf:'gph'}]},
+   {name:'Куратор VR-десанта',unit:'чел',qty:1,rate:50000,mon:4,dir:11,tf:'gph'},
+   {name:'Координатор по партнёрам и площадкам',unit:'чел',qty:1,rate:40000,mon:4,dir:11,tf:'gph'},
+   {name:'Кураторы-медиаторы точек показа (творческое сопровождение, 6 точек)',unit:'чел',qty:6,rate:40000,mon:4,dir:11,tf:'gph'}]},
  {g:'Персонал — штат НКО (трудовые договоры)', rows:[
-   {name:'Директор НКО (часть занятости по мероприятию)',unit:'чел·мес',qty:4,rate:50000,dir:21,tf:'staff'},
-   {name:'Бухгалтер НКО (учёт целевого расходования субсидии)',unit:'чел·мес',qty:4,rate:30000,dir:21,tf:'staff'},
-   {name:'Руководитель проекта',unit:'чел·мес',qty:4,rate:70000,dir:21,tf:'staff'}]},
+   {name:'Директор НКО (часть занятости по мероприятию)',unit:'чел',qty:1,rate:50000,mon:4,dir:21,tf:'staff'},
+   {name:'Бухгалтер НКО (учёт целевого расходования субсидии)',unit:'чел',qty:1,rate:30000,mon:4,dir:21,tf:'staff'},
+   {name:'Руководитель проекта',unit:'чел',qty:1,rate:70000,mon:4,dir:21,tf:'staff'}]},
  {g:'Маркетинг, реклама, продвижение', rows:[
-   {name:'Промо-ролик 30 сек (по точкам/форматам)',unit:'ролик',qty:6,rate:40000,dir:13,tf:''},
-   {name:'Лендинг/сайт проекта (расписание, карта точек, каталог)',unit:'усл.',qty:1,rate:200000,dir:13,tf:''},
-   {name:'Печатная/полиграфическая продукция (афиши, флаеры, буклеты, QR)',unit:'усл.',qty:1,rate:160000,dir:13,tf:''},
-   {name:'Контекстная/таргетированная реклама в сети «Интернет»',unit:'мес',qty:4,rate:100000,dir:14,tf:''},
-   {name:'Посевы у блогеров/лидеров мнений',unit:'публ.',qty:8,rate:25000,dir:14,tf:''}]},
+   {name:'Промо-ролик 30 сек (по точкам/форматам)',unit:'ролик',qty:6,rate:40000,mon:1,dir:13,tf:''},
+   {name:'Лендинг/сайт проекта (расписание, карта точек, каталог)',unit:'усл.',qty:1,rate:200000,mon:1,dir:13,tf:''},
+   {name:'Печатная/полиграфическая продукция (афиши, флаеры, буклеты, QR)',unit:'усл.',qty:1,rate:160000,mon:1,dir:13,tf:''},
+   {name:'Контекстная/таргетированная реклама в сети «Интернет» (помесячно)',unit:'кампания',qty:1,rate:100000,mon:4,dir:14,tf:''},
+   {name:'Посевы у блогеров/лидеров мнений',unit:'публ.',qty:8,rate:25000,mon:1,dir:14,tf:''}]},
  {g:'Площадки, оформление, онлайн, обеспечение', rows:[
-   {name:'Аренда площадок у 6 библиотек — включает предоставление линейного персонала (ВР-консультанты на точках) силами библиотеки. Это услуга библиотеки по п.1, страховые взносы НКО не несёт.',unit:'точка',qty:6,rate:250000,dir:1,tf:''},
-   {name:'Художественно-декорационное оформление иммерсивных VR-зон',unit:'точка',qty:6,rate:85000,dir:3,tf:''},
-   {name:'Онлайн-трансляции и художественные видеоверсии для интернет-показа',unit:'усл.',qty:1,rate:600000,dir:6,tf:''},
-   {name:'Санитарно-гигиеническое обеспечение и уборка точек, дежурство',unit:'точка·мес',qty:24,rate:13000,dir:18,tf:''},
-   {name:'Расходные материалы (гигиена оптики шлемов, канцелярия)',unit:'усл.',qty:1,rate:140000,dir:19,tf:''}]}
+   {name:'Аренда площадок у 6 библиотек — включает предоставление линейного персонала (ВР-консультанты на точках) силами библиотеки. Это услуга библиотеки по п.1, страховые взносы НКО не несёт.',unit:'точка',qty:6,rate:62500,mon:4,dir:1,tf:''},
+   {name:'Художественно-декорационное оформление иммерсивных VR-зон',unit:'точка',qty:6,rate:85000,mon:1,dir:3,tf:''},
+   {name:'Онлайн-трансляции и художественные видеоверсии для интернет-показа',unit:'усл.',qty:1,rate:600000,mon:1,dir:6,tf:''},
+   {name:'Санитарно-гигиеническое обеспечение и уборка точек, дежурство',unit:'точка',qty:6,rate:13000,mon:4,dir:18,tf:''},
+   {name:'Расходные материалы (гигиена оптики шлемов, канцелярия)',unit:'усл.',qty:1,rate:140000,mon:1,dir:19,tf:''}]}
 ];
 let dtl=JSON.parse(JSON.stringify(DTL_DEF));
 let _delStack=[];
@@ -799,13 +800,15 @@ function dtaxRates(){
 }
 const TKN={gph:'ГПХ',staff:'штат',ip:'ИП'};
 function dirLabel(n){const L=LIM23.find(x=>x.n===n);return L?('п.'+n+' ≤'+(L.f*100).toFixed(0)+'% — '+L.s):('п.'+n);}
+function rmon(r){return r.mon==null?1:(+r.mon||0);}
+function rsum(r){return (+r.qty||0)*(+r.rate||0)*rmon(r);}
 const FORMS=[['','— подряд / юрлицо (без взносов)'],['gph','ГПХ (взносы)'],['ip','ИП (взносы 0)'],['staff','Штат (взносы)']];
 function renderDetail(){
   const el=document.getElementById('dtlTable');if(!el)return;
   let h='<tr><th class="r" style="width:42px">№</th><th>Наименование</th><th class="r">Ед.</th><th class="r">Кол-во</th>'+
-    '<th class="r">Ставка, ₽</th><th class="r">Сумма, ₽</th><th>Напр. № 189</th><th>Форма</th><th>Статус (лимит)</th><th>Действия</th></tr>';
+    '<th class="r">Мес</th><th class="r">Ставка, ₽</th><th class="r">Сумма, ₽</th><th>Напр. № 189</th><th>Форма</th><th>Статус (лимит)</th><th>Действия</th></tr>';
   dtl.forEach((G,gi)=>{
-    h+=`<tr class="tot"><td colspan="10">Блок ${gi+1}. ${G.g}</td></tr>`;
+    h+=`<tr class="tot"><td colspan="11">Блок ${gi+1}. ${G.g}</td></tr>`;
     G.rows.forEach((r,ri)=>{
       const dirOpts=LIM23.map(L=>`<option value="${L.n}"${L.n===r.dir?' selected':''}>${dirLabel(L.n)}</option>`).join('');
       const fOpts=FORMS.map(x=>`<option value="${x[0]}"${(r.tf||'')===x[0]?' selected':''}>${x[1]}</option>`).join('');
@@ -815,6 +818,7 @@ function renderDetail(){
         <td class="desc"><textarea id="dn_${gi}_${ri}" rows="3" style="width:230px">${esc(r.name||'')}</textarea></td>
         <td class="r"><input type="text" id="du_${gi}_${ri}" value="${(r.unit||'').replace(/"/g,'&quot;')}" style="width:74px"></td>
         <td class="r"><input type="text" inputmode="numeric" id="dq_${gi}_${ri}" value="${(r.qty||0).toLocaleString('ru-RU')}" style="width:62px"></td>
+        <td class="r"><input type="text" inputmode="numeric" id="dm_${gi}_${ri}" value="${rmon(r)}" style="width:46px" title="кол-во месяцев"></td>
         <td class="r"><input type="text" inputmode="numeric" id="dr_${gi}_${ri}" value="${(Math.round(r.rate)||0).toLocaleString('ru-RU')}" style="width:100px"></td>
         <td class="r" id="ds_${gi}_${ri}" style="font-weight:700">—</td>
         <td class="dir"><select id="dd_${gi}_${ri}" style="width:218px;max-width:218px">${dirOpts}</select></td>
@@ -822,10 +826,10 @@ function renderDetail(){
         <td class="stc" id="dst_${gi}_${ri}">—</td>
         <td style="white-space:nowrap">${kp?`<button type="button" onclick="genKP(${gi},${ri})" style="border:1px solid var(--blue);background:var(--blue-soft);color:var(--blue);border-radius:6px;padding:3px 9px;font-size:11px;font-weight:700;cursor:pointer">КП</button> `:''}<button type="button" onclick="delDtl(${gi},${ri})" title="удалить" style="border:1px solid var(--line);background:#fff;border-radius:6px;padding:3px 8px;font-size:11px;cursor:pointer;color:var(--red)">✕</button></td></tr>`;
     });
-    h+=`<tr><td class="r" style="color:var(--mut)">${gi+1}.в</td><td colspan="4" style="color:var(--mut)">Страховые взносы по блоку (по форме строк) — <span id="dtrate_${gi}"></span></td><td class="r" id="dtaxb_${gi}" style="font-weight:700">—</td><td colspan="4"></td></tr>`;
-    h+=`<tr><td></td><td colspan="9"><button type="button" onclick="addDtl(${gi})" style="border:1px dashed #94a3b8;background:#fff;border-radius:7px;padding:5px 12px;font-size:12px;cursor:pointer;color:#475569">+ добавить строку в Блок ${gi+1}</button> <span style="color:var(--mut);font-size:12px">подытог блока: <b id="dsub_${gi}">—</b></span></td></tr>`;
+    h+=`<tr><td class="r" style="color:var(--mut)">${gi+1}.в</td><td colspan="5" style="color:var(--mut)">Страховые взносы по блоку (по форме строк) — <span id="dtrate_${gi}"></span></td><td class="r" id="dtaxb_${gi}" style="font-weight:700">—</td><td colspan="4"></td></tr>`;
+    h+=`<tr><td></td><td colspan="10"><button type="button" onclick="addDtl(${gi})" style="border:1px dashed #94a3b8;background:#fff;border-radius:7px;padding:5px 12px;font-size:12px;cursor:pointer;color:#475569">+ добавить строку в Блок ${gi+1}</button> <span style="color:var(--mut);font-size:12px">подытог блока: <b id="dsub_${gi}">—</b></span></td></tr>`;
   });
-  h+=`<tr class="tot"><td></td><td>ИТОГО смета (S)</td><td></td><td></td><td></td><td class="r" id="dGrand">—</td><td colspan="4"></td></tr>`;
+  h+=`<tr class="tot"><td></td><td>ИТОГО смета (S)</td><td></td><td></td><td></td><td></td><td class="r" id="dGrand">—</td><td colspan="4"></td></tr>`;
   el.className='sm';el.innerHTML=h;
   dtl.forEach((G,gi)=>G.rows.forEach((r,ri)=>{
     const bind=(id,prop,numeric)=>{const e=document.getElementById(id+'_'+gi+'_'+ri);if(!e)return;
@@ -833,7 +837,7 @@ function renderDetail(){
         if(numeric){r[prop]=+(e.value.replace(/\D/g,''))||0;e.value=(r[prop]).toLocaleString('ru-RU');}
         else r[prop]=e.value;
         recalc();});};
-    bind('dn','name',false);bind('du','unit',false);bind('dq','qty',true);bind('dr','rate',true);
+    bind('dn','name',false);bind('du','unit',false);bind('dq','qty',true);bind('dm','mon',true);bind('dr','rate',true);
     const dd=document.getElementById('dd_'+gi+'_'+ri);
     if(dd)dd.addEventListener('change',()=>{r.dir=+dd.value;renderDetail();recalc();});
     const df=document.getElementById('df_'+gi+'_'+ri);
@@ -841,7 +845,7 @@ function renderDetail(){
   }));
   document.querySelectorAll('input[name="dtax"]').forEach(x=>x.addEventListener('change',recalc));
 }
-function addDtl(gi){dtl[gi].rows.push({name:'Новая статья',unit:'усл.',qty:1,rate:0,dir:1,tf:''});renderDetail();recalc();}
+function addDtl(gi){dtl[gi].rows.push({name:'Новая статья',unit:'усл.',qty:1,rate:0,mon:1,dir:1,tf:''});renderDetail();recalc();}
 function delDtl(gi,ri){_delStack.push({gi,ri,row:JSON.parse(JSON.stringify(dtl[gi].rows[ri]))});dtl[gi].rows.splice(ri,1);renderDetail();recalc();}
 function undoDel(){
   if(!_delStack.length){alert('Нет удалённых строк для возврата.');return;}
@@ -854,7 +858,7 @@ function recalcDetail(){
   dtl.forEach((G,gi)=>{
     let sub=0,bTax=0;
     G.rows.forEach((r,ri)=>{
-      const s=(+r.qty||0)*(+r.rate||0);sub+=s;
+      const s=rsum(r);sub+=s;
       const se=document.getElementById('ds_'+gi+'_'+ri);if(se)se.textContent=fmtRub(s);
       byDir[r.dir]=(byDir[r.dir]||0)+s;
       const rate=r.tf?(R[r.tf]||0):0, tax=s*rate;
@@ -907,18 +911,18 @@ function kpMode(){return (document.querySelector('input[name="kpmode"]:checked')
 function kpLots(){
   const mode=kpMode(), out=[];
   if(mode==='row'){
-    dtl.forEach(G=>G.rows.forEach(r=>{const L=LIM23.find(x=>x.n===r.dir)||{};const s=(+r.qty||0)*(+r.rate||0);
-      if(L.k&&s>0)out.push({title:r.name,items:[{name:r.name,unit:r.unit,qty:+r.qty||1,rate:+r.rate||0}],total:s});}));
+    dtl.forEach(G=>G.rows.forEach(r=>{const L=LIM23.find(x=>x.n===r.dir)||{};const s=rsum(r);
+      if(L.k&&s>0)out.push({title:r.name,items:[{name:r.name,unit:r.unit,qty:(+r.qty||1)*rmon(r),rate:+r.rate||0}],total:s});}));
   }else if(mode==='group'){
     dtl.forEach(G=>{const items=[];let tot=0;
-      G.rows.forEach(r=>{const L=LIM23.find(x=>x.n===r.dir)||{};const s=(+r.qty||0)*(+r.rate||0);
-        if(L.k&&s>0){items.push({name:r.name,unit:r.unit,qty:+r.qty||1,rate:+r.rate||0});tot+=s;}});
+      G.rows.forEach(r=>{const L=LIM23.find(x=>x.n===r.dir)||{};const s=rsum(r);
+        if(L.k&&s>0){items.push({name:r.name,unit:r.unit,qty:(+r.qty||1)*rmon(r),rate:+r.rate||0});tot+=s;}});
       if(items.length)out.push({title:G.g,items,total:tot});});
   }else{
     const map={};
-    dtl.forEach(G=>G.rows.forEach(r=>{const L=LIM23.find(x=>x.n===r.dir)||{};const s=(+r.qty||0)*(+r.rate||0);
+    dtl.forEach(G=>G.rows.forEach(r=>{const L=LIM23.find(x=>x.n===r.dir)||{};const s=rsum(r);
       if(L.k&&s>0){if(!map[r.dir])map[r.dir]={title:dirLabel(r.dir)+' — '+L.t,items:[],total:0};
-        map[r.dir].items.push({name:r.name,unit:r.unit,qty:+r.qty||1,rate:+r.rate||0});map[r.dir].total+=s;}}));
+        map[r.dir].items.push({name:r.name,unit:r.unit,qty:(+r.qty||1)*rmon(r),rate:+r.rate||0});map[r.dir].total+=s;}}));
     Object.keys(map).sort((a,b)=>a-b).forEach(k=>out.push(map[k]));
   }
   return out;
@@ -1016,18 +1020,18 @@ function smetaTable(num){ // num: true → ₽ с разделителями (do
   const R=dtaxRates();let grand=0;
   const fm=v=>num?Math.round(v).toLocaleString('ru-RU'):String(Math.round(v));
   let b='<table border="1" cellspacing="0" cellpadding="5" style="border-collapse:collapse;width:100%;font-family:\'Times New Roman\'">'+
-    '<tr><th>№</th><th>Наименование</th><th>Ед.</th><th>Кол-во</th><th>Ставка, ₽</th><th>Сумма, ₽</th><th>Напр. № 189</th><th>Форма</th></tr>';
+    '<tr><th>№</th><th>Наименование</th><th>Ед.</th><th>Кол-во</th><th>Мес</th><th>Ставка, ₽</th><th>Сумма, ₽</th><th>Напр. № 189</th><th>Форма</th></tr>';
   dtl.forEach((G,gi)=>{
-    b+=`<tr><td colspan="8" style="background:#eef;font-weight:bold">Блок ${gi+1}. ${esc(G.g)}</td></tr>`;
+    b+=`<tr><td colspan="9" style="background:#eef;font-weight:bold">Блок ${gi+1}. ${esc(G.g)}</td></tr>`;
     let sub=0,bTax=0;
-    G.rows.forEach((r,ri)=>{const s=(+r.qty||0)*(+r.rate||0);sub+=s;
+    G.rows.forEach((r,ri)=>{const s=rsum(r);sub+=s;
       const fl=(FORMS.find(x=>x[0]===(r.tf||''))||['',''])[1];
       const rate=r.tf?(R[r.tf]||0):0;bTax+=s*rate;
-      b+=`<tr><td>${gi+1}.${ri+1}</td><td>${esc(r.name)}</td><td align="center">${esc(r.unit||'')}</td><td align="center">${r.qty}</td><td align="right">${fm(r.rate)}</td><td align="right">${fm(s)}</td><td>${esc(dirLabel(r.dir))}</td><td>${esc(fl)}</td></tr>`;});
-    if(bTax>0)b+=`<tr><td></td><td colspan="4">Страховые взносы по блоку (${R.n})</td><td align="right">${fm(bTax)}</td><td colspan="2"></td></tr>`;
+      b+=`<tr><td>${gi+1}.${ri+1}</td><td>${esc(r.name)}</td><td align="center">${esc(r.unit||'')}</td><td align="center">${r.qty}</td><td align="center">${rmon(r)}</td><td align="right">${fm(r.rate)}</td><td align="right">${fm(s)}</td><td>${esc(dirLabel(r.dir))}</td><td>${esc(fl)}</td></tr>`;});
+    if(bTax>0)b+=`<tr><td></td><td colspan="5">Страховые взносы по блоку (${R.n})</td><td align="right">${fm(bTax)}</td><td colspan="2"></td></tr>`;
     sub+=bTax;grand+=sub;
-    b+=`<tr><td colspan="5" align="right" style="font-weight:bold">Подытог Блока ${gi+1}:</td><td align="right" style="font-weight:bold">${fm(sub)}</td><td colspan="2"></td></tr>`;});
-  b+=`<tr><td colspan="5" align="right" style="font-weight:bold">ИТОГО смета (S):</td><td align="right" style="font-weight:bold">${fm(grand)}</td><td colspan="2"></td></tr></table>`;
+    b+=`<tr><td colspan="6" align="right" style="font-weight:bold">Подытог Блока ${gi+1}:</td><td align="right" style="font-weight:bold">${fm(sub)}</td><td colspan="2"></td></tr>`;});
+  b+=`<tr><td colspan="6" align="right" style="font-weight:bold">ИТОГО смета (S):</td><td align="right" style="font-weight:bold">${fm(grand)}</td><td colspan="2"></td></tr></table>`;
   return b;
 }
 function dlSmetaDoc(){_dl('Детальная_смета.doc','<h2>Детальная смета затрат</h2>'+smetaTable(true));}
