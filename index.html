@@ -268,11 +268,18 @@
       <div class="box"><div class="v" id="dVcalc">0 ₽</div><div class="k">V<sub>расчёт</sub> (балл — из «Критериев»)</div></div>
     </div>
     <div class="bldscroll"><table class="sm bld" id="dtlTable"></table></div>
-    <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
-      <button class="print" style="border:1px solid var(--blue);background:var(--blue);color:#fff;border-radius:9px;padding:9px 14px;font-weight:600;cursor:pointer" onclick="dlAllKP()">Скачать ВСЕ КП одним файлом (.doc)</button>
+    <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;font-size:13px;margin:14px 0 10px;padding:12px 14px;background:#f8fafc;border:1px solid var(--line);border-radius:10px">
+      <span><b>Укрупнение КП:</b></span>
+      <label style="display:flex;gap:6px;cursor:pointer"><input type="radio" name="kpmode" value="dir" checked> по направлению (рекомендую)</label>
+      <label style="display:flex;gap:6px;cursor:pointer"><input type="radio" name="kpmode" value="group"> по группе</label>
+      <label style="display:flex;gap:6px;cursor:pointer"><input type="radio" name="kpmode" value="row"> по каждой строке</label>
+    </div>
+    <div style="margin-top:6px;display:flex;gap:8px;flex-wrap:wrap">
+      <button class="print" style="border:1px solid var(--blue);background:var(--blue);color:#fff;border-radius:9px;padding:9px 14px;font-weight:600;cursor:pointer" onclick="openKPList()">Сформировать КП (список лотов)</button>
+      <button style="border:1px solid var(--blue);background:#fff;border-radius:9px;padding:9px 14px;font-weight:600;cursor:pointer;color:var(--blue)" onclick="dlAllKP()">Скачать ВСЕ КП по лотам (.doc)</button>
       <button style="border:1px solid var(--line);background:#fff;border-radius:9px;padding:9px 14px;font-weight:600;cursor:pointer;color:#475569" onclick="dlSmetaDoc()">Скачать смету (.doc)</button>
     </div>
-    <div class="sub" style="margin-top:10px">Контрагент/реквизиты в КП — заглушки <code>[…]</code>: подставляются при переносе на бланк поставщика. Цены округлены; наша сметная цена строки = средняя из трёх КП (п. 8.3 № 189). Налоги — упрощённый единый эффективный %; для МСП фактически 30% до 1,5 МРОТ и 15% свыше (взят 15%).</div>
+    <div class="sub" style="margin-top:10px">КП формируются <b>укрупнённо по лотам</b> (по умолчанию — по направлению затрат): один консолидированный КП на лот с разбивкой по позициям внутри, а не по каждой строке (так меньше документов и это естественнее для поставщика). Контрагент/реквизиты — заглушки <code>[…]</code> под бланк. Цена лота в нашей смете = средняя из трёх КП (±10%, п. 8.3 № 189). Налоги — упрощённый единый эффективный %; для МСП фактически 30% до 1,5 МРОТ и 15% свыше (взят 15%).</div>
   </div>
   <div id="kpModalWrap" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:50;padding:30px;overflow:auto" onclick="if(event.target===this)closeKP()">
     <div style="max-width:900px;margin:0 auto;background:#fff;border-radius:14px;padding:24px" id="kpModal"></div>
@@ -845,87 +852,111 @@ const KP_SUP=[
  {n:'ООО «[Наименование поставщика 2]»',ph:'В ответ на Ваш запрос сообщаем стоимость поставки товаров/работ/услуг по позиции:',out:'Срок выполнения — согласно календарному плану. Предложение носит коммерческий характер, действует 30 дней.'},
  {n:'ИП [ФИО / Наименование поставщика 3]',ph:'Предлагаем к рассмотрению нашу цену по предмету закупки:',out:'Гарантия качества. Стоимость окончательная, действительна в течение месяца с даты составления.'}
 ];
-function kpHtml(stat,desc,unit,qty,price){
-  const total=price*(qty||1);
-  return KP_SUP.map((s,i)=>`
-   <div style="page-break-after:always;font-family:'Times New Roman',serif;font-size:13pt">
-    <p style="text-align:right">[Бланк организации: ${s.n}]<br>[ИНН/КПП, адрес, тел., e-mail]</p>
-    <p style="text-align:right">Исх. № [___] от «[__]» [_____] 2026 г.</p>
-    <p style="text-align:center;font-weight:bold;font-size:14pt">КОММЕРЧЕСКОЕ ПРЕДЛОЖЕНИЕ</p>
-    <p>Кому: [Наименование организации-заявителя], для участия в отборе на предоставление субсидий Комитета по культуре Санкт-Петербурга.</p>
-    <p>${s.ph}</p>
-    <p><b>Направление затрат:</b> ${stat}</p>
-    <table border="1" cellspacing="0" cellpadding="6" style="border-collapse:collapse;width:100%">
-     <tr><th>Наименование</th><th>Ед.</th><th>Кол-во</th><th>Цена за ед., ₽</th><th>Сумма, ₽</th></tr>
-     <tr><td>${desc}</td><td align="center">${unit||'усл.'}</td><td align="center">${qty||1}</td><td align="right">${price.toLocaleString('ru-RU')}</td><td align="right">${total.toLocaleString('ru-RU')}</td></tr>
-     <tr><td colspan="4" align="right"><b>Итого:</b></td><td align="right"><b>${total.toLocaleString('ru-RU')} ₽</b></td></tr>
-    </table>
-    <p>${s.out}</p>
-    <p>Руководитель ${s.n} ______________ / [ФИО] /　　М.П.</p>
-   </div>`).join('');
+function esc(x){return (''+x).replace(/&/g,'&amp;').replace(/</g,'&lt;');}
+function kpMode(){return (document.querySelector('input[name="kpmode"]:checked')||{}).value||'dir';}
+function kpLots(){
+  const mode=kpMode(), out=[];
+  if(mode==='row'){
+    dtl.forEach(G=>G.rows.forEach(r=>{const L=LIM23.find(x=>x.n===r.dir)||{};const s=(+r.qty||0)*(+r.rate||0);
+      if(L.k&&s>0)out.push({title:r.name,items:[{name:r.name,unit:r.unit,qty:+r.qty||1,rate:+r.rate||0}],total:s});}));
+  }else if(mode==='group'){
+    dtl.forEach(G=>{const items=[];let tot=0;
+      G.rows.forEach(r=>{const L=LIM23.find(x=>x.n===r.dir)||{};const s=(+r.qty||0)*(+r.rate||0);
+        if(L.k&&s>0){items.push({name:r.name,unit:r.unit,qty:+r.qty||1,rate:+r.rate||0});tot+=s;}});
+      if(items.length)out.push({title:G.g,items,total:tot});});
+  }else{
+    const map={};
+    dtl.forEach(G=>G.rows.forEach(r=>{const L=LIM23.find(x=>x.n===r.dir)||{};const s=(+r.qty||0)*(+r.rate||0);
+      if(L.k&&s>0){if(!map[r.dir])map[r.dir]={title:dirLabel(r.dir)+' — '+L.t,items:[],total:0};
+        map[r.dir].items.push({name:r.name,unit:r.unit,qty:+r.qty||1,rate:+r.rate||0});map[r.dir].total+=s;}}));
+    Object.keys(map).sort((a,b)=>a-b).forEach(k=>out.push(map[k]));
+  }
+  return out;
 }
-let _kpCtx=null;
-function genKP(gi,ri){
-  const r=dtl[gi].rows[ri]; const X=(+r.qty||0)*(+r.rate||0);
-  if(X<=0){alert('Укажите кол-во и ставку — сумма строки должна быть больше 0.');return;}
-  const stat=dirLabel(r.dir)+' — '+(LIM23.find(x=>x.n===r.dir)||{}).t;
-  const P=kpPrices(X), unitPr=P.map(p=>Math.round(p/(r.qty||1)));
-  _kpCtx={stat,desc:r.name,unit:r.unit,qty:r.qty||1,P,unitPr};
-  const m=document.getElementById('kpModal');
-  m.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-     <h2 style="margin:0;font-size:17px">3 КП · ${r.name.slice(0,70)}</h2>
-     <button onclick="closeKP()" style="border:1px solid var(--line);background:#fff;border-radius:8px;padding:6px 12px;cursor:pointer">Закрыть ✕</button></div>
-   <div class="sub">Наша сметная цена строки = <b>${fmtRub(X)}</b> (средняя из трёх). Цены: КП-1 ${fmtRub(P[0])} · КП-2 ${fmtRub(P[1])} · КП-3 ${fmtRub(P[2])}.</div>
-   ${[0,1,2].map(i=>`<div style="border:1px solid var(--line);border-radius:10px;padding:12px;margin:10px 0">
-     <div style="display:flex;justify-content:space-between;align-items:center;gap:10px">
-       <b>КП-${i+1}: ${KP_SUP[i].n}</b>
-       <span>цена за ед. <b>${unitPr[i].toLocaleString('ru-RU')} ₽</b> · сумма <b>${(P[i]).toLocaleString('ru-RU')} ₽</b></span>
-     </div>
-     <textarea readonly rows="6" style="width:100%;margin-top:8px;font-size:12px" id="kptxt_${i}">${kpPlain(i,_kpCtx,P[i],unitPr[i])}</textarea>
-     <div style="display:flex;gap:8px;margin-top:6px">
-       <button onclick="cpKP(${i})" style="border:1px solid var(--line);background:#fff;border-radius:7px;padding:6px 12px;cursor:pointer">Копировать</button>
-       <button onclick="dlKP(${i})" style="border:1px solid var(--blue);background:var(--blue);color:#fff;border-radius:7px;padding:6px 12px;cursor:pointer">Скачать .doc</button>
-     </div></div>`).join('')}
-   <button onclick="dlKP('all')" style="border:1px solid var(--blue);background:var(--blue);color:#fff;border-radius:8px;padding:9px 14px;font-weight:600;cursor:pointer;margin-top:6px">Скачать все 3 КП одним .doc</button>`;
-  document.getElementById('kpModalWrap').style.display='';
-}
-function kpPlain(i,c,price,up){const s=KP_SUP[i];
-  return `${s.n}\nИсх. № [___] от «[__]» [_____] 2026 г.\n\nКОММЕРЧЕСКОЕ ПРЕДЛОЖЕНИЕ\nКому: [Наименование организации-заявителя]\n\n${s.ph}\nНаправление затрат: ${c.stat}\nНаименование: ${c.desc}\nЕд.: ${c.unit||'усл.'} · Кол-во: ${c.qty} · Цена за ед.: ${up.toLocaleString('ru-RU')} ₽ · Сумма: ${price.toLocaleString('ru-RU')} ₽\n\n${s.out}\nРуководитель ______________ / [ФИО] /  М.П.`;}
-function closeKP(){document.getElementById('kpModalWrap').style.display='none';}
-function cpKP(i){const t=document.getElementById('kptxt_'+i);t.select();try{document.execCommand('copy');}catch(e){}
-  try{navigator.clipboard&&navigator.clipboard.writeText(t.value);}catch(e){}}
-function _dl(name,bodyHtml){
-  const blob=new Blob(['﻿<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="utf-8"></head><body>'+bodyHtml+'</body></html>'],{type:'application/msword'});
-  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();a.remove();}
-function dlKP(which){
-  const c=_kpCtx;if(!c)return;
-  if(which==='all'){_dl('КП_3шт.doc',kpHtml(c.stat,c.desc,c.unit,c.qty,c.P[1]).replace(/PRICE/g,''));return;}
-  // отдельный КП: один поставщик
-  const i=which, html=kpHtml(c.stat,c.desc,c.unit,c.qty,c.P[i]).split('page-break-after:always')[ (0) ];
-  _dl('КП-'+(i+1)+'.doc', kpOneHtml(i,c,c.P[i],c.unitPr[i]));
-}
-function kpOneHtml(i,c,price,up){const s=KP_SUP[i];const total=price;
+function lotKpHtml(si,lot,price){
+  const s=KP_SUP[si], k=lot.total?price/lot.total:1;
+  const rows=lot.items.map(it=>{const up=Math.round((it.rate||0)*k), sm=up*(it.qty||1);
+    return `<tr><td>${esc(it.name)}</td><td align="center">${esc(it.unit||'усл.')}</td><td align="center">${it.qty||1}</td><td align="right">${up.toLocaleString('ru-RU')}</td><td align="right">${sm.toLocaleString('ru-RU')}</td></tr>`;}).join('');
   return `<div style="font-family:'Times New Roman',serif;font-size:13pt">
    <p style="text-align:right">[Бланк: ${s.n}] · [ИНН/КПП, адрес, тел., e-mail]</p>
    <p style="text-align:right">Исх. № [___] от «[__]» [_____] 2026 г.</p>
    <p style="text-align:center;font-weight:bold;font-size:14pt">КОММЕРЧЕСКОЕ ПРЕДЛОЖЕНИЕ</p>
-   <p>Кому: [Наименование организации-заявителя].</p><p>${s.ph}</p>
-   <p><b>Направление затрат:</b> ${c.stat}</p>
-   <table border="1" cellspacing="0" cellpadding="6" style="border-collapse:collapse">
+   <p>Кому: [Наименование организации-заявителя], для участия в отборе на предоставление субсидий Комитета по культуре Санкт-Петербурга.</p>
+   <p>${s.ph}</p><p><b>Предмет:</b> ${esc(lot.title)}</p>
+   <table border="1" cellspacing="0" cellpadding="6" style="border-collapse:collapse;width:100%">
     <tr><th>Наименование</th><th>Ед.</th><th>Кол-во</th><th>Цена за ед., ₽</th><th>Сумма, ₽</th></tr>
-    <tr><td>${c.desc}</td><td align="center">${c.unit||'усл.'}</td><td align="center">${c.qty}</td><td align="right">${up.toLocaleString('ru-RU')}</td><td align="right">${total.toLocaleString('ru-RU')}</td></tr>
-   </table><p>${s.out}</p><p>Руководитель ______________ / [ФИО] / М.П.</p></div>`;}
+    ${rows}
+    <tr><td colspan="4" align="right"><b>Итого:</b></td><td align="right"><b>${Math.round(price).toLocaleString('ru-RU')} ₽</b></td></tr>
+   </table><p>${s.out}</p><p>Руководитель ${s.n} ______________ / [ФИО] / М.П.</p></div>`;
+}
+function lotKpPlain(si,lot,price){const s=KP_SUP[si], k=lot.total?price/lot.total:1;
+  const ln=lot.items.map(it=>{const up=Math.round((it.rate||0)*k);return `• ${it.name} — ${it.qty||1} ${it.unit||'усл.'} × ${up.toLocaleString('ru-RU')} = ${(up*(it.qty||1)).toLocaleString('ru-RU')} ₽`;}).join('\n');
+  return `${s.n}\nИсх. № [___] от «[__]» [_____] 2026 г.\n\nКОММЕРЧЕСКОЕ ПРЕДЛОЖЕНИЕ\nКому: [Наименование организации-заявителя]\n\n${s.ph}\nПредмет: ${lot.title}\n\n${ln}\n\nИТОГО: ${Math.round(price).toLocaleString('ru-RU')} ₽\n\n${s.out}\nРуководитель ______________ / [ФИО] / М.П.`;}
+let _lots=[],_lotIdx=0;
+function openKPList(){
+  _lots=kpLots();
+  const m=document.getElementById('kpModal');
+  if(!_lots.length){m.innerHTML='<p>Нет закупочных строк с суммой > 0. Заполните детальный бюджет.</p><button onclick="closeKP()" style="border:1px solid var(--line);background:#fff;border-radius:8px;padding:6px 12px;cursor:pointer;margin-top:8px">Закрыть</button>';document.getElementById('kpModalWrap').style.display='';return;}
+  m.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+     <h2 style="margin:0;font-size:17px">КП по лотам (${_lots.length}) · режим: ${({dir:'по направлению',group:'по группе',row:'по строке'})[kpMode()]}</h2>
+     <button onclick="closeKP()" style="border:1px solid var(--line);background:#fff;border-radius:8px;padding:6px 12px;cursor:pointer">Закрыть ✕</button></div>
+   <div class="sub">На каждый лот — 3 КП с разбивкой по позициям. Наша сметная цена лота = средняя из трёх (±10%).</div>
+   ${_lots.map((lot,idx)=>`<div style="border:1px solid var(--line);border-radius:10px;padding:11px;margin:8px 0;display:flex;justify-content:space-between;align-items:center;gap:10px">
+     <div><b>${esc(lot.title.slice(0,80))}</b><div style="color:var(--mut);font-size:12px">${lot.items.length} поз. · итого ${fmtRub(lot.total)}</div></div>
+     <button onclick="showLotKP(${idx})" style="border:1px solid var(--blue);background:var(--blue);color:#fff;border-radius:7px;padding:6px 12px;font-weight:600;cursor:pointer">3 КП</button></div>`).join('')}
+   <button onclick="dlAllKP()" style="border:1px solid var(--blue);background:var(--blue);color:#fff;border-radius:8px;padding:9px 14px;font-weight:600;cursor:pointer;margin-top:8px">Скачать ВСЕ КП по лотам одним .doc</button>`;
+  document.getElementById('kpModalWrap').style.display='';
+}
+function showLotKP(idx){
+  if(!_lots.length)_lots=kpLots();
+  _lotIdx=idx; const lot=_lots[idx]; const P=kpPrices(lot.total);
+  const m=document.getElementById('kpModal');
+  m.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+     <h2 style="margin:0;font-size:16px">3 КП · ${esc(lot.title.slice(0,70))}</h2>
+     <div><button onclick="openKPList()" style="border:1px solid var(--line);background:#fff;border-radius:8px;padding:6px 10px;cursor:pointer;margin-right:6px">← к списку</button>
+     <button onclick="closeKP()" style="border:1px solid var(--line);background:#fff;border-radius:8px;padding:6px 12px;cursor:pointer">Закрыть ✕</button></div></div>
+   <div class="sub">${lot.items.length} позиций · наша цена лота = <b>${fmtRub(lot.total)}</b> (средняя). КП-1 ${fmtRub(P[0])} · КП-2 ${fmtRub(P[1])} · КП-3 ${fmtRub(P[2])}.</div>
+   ${[0,1,2].map(i=>`<div style="border:1px solid var(--line);border-radius:10px;padding:12px;margin:10px 0">
+     <div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><b>КП-${i+1}: ${KP_SUP[i].n}</b><span>сумма <b>${P[i].toLocaleString('ru-RU')} ₽</b></span></div>
+     <textarea readonly rows="7" style="width:100%;margin-top:8px;font-size:12px" id="kptxt_${i}">${esc(lotKpPlain(i,lot,P[i]))}</textarea>
+     <div style="display:flex;gap:8px;margin-top:6px">
+       <button onclick="cpKP(${i})" style="border:1px solid var(--line);background:#fff;border-radius:7px;padding:6px 12px;cursor:pointer">Копировать</button>
+       <button onclick="dlLotKP(${i})" style="border:1px solid var(--blue);background:var(--blue);color:#fff;border-radius:7px;padding:6px 12px;cursor:pointer">Скачать .doc</button>
+     </div></div>`).join('')}
+   <button onclick="dlLotKP('all')" style="border:1px solid var(--blue);background:var(--blue);color:#fff;border-radius:8px;padding:9px 14px;font-weight:600;cursor:pointer;margin-top:6px">Скачать все 3 КП лота одним .doc</button>`;
+  document.getElementById('kpModalWrap').style.display='';
+}
+function genKP(gi,ri){
+  const r=dtl[gi].rows[ri]; const L=LIM23.find(x=>x.n===r.dir)||{};
+  if(!L.k){alert('По этому направлению КП не требуются (п.20/21/22).');return;}
+  if((+r.qty||0)*(+r.rate||0)<=0){alert('Укажите кол-во и ставку.');return;}
+  _lots=kpLots();
+  const mode=kpMode();
+  let idx=0;
+  if(mode==='row'){const nm=r.name;idx=_lots.findIndex(l=>l.items.length===1&&l.items[0].name===nm);}
+  else if(mode==='group'){idx=_lots.findIndex(l=>l.title===dtl[gi].g);}
+  else{const lab=dirLabel(r.dir)+' — '+L.t;idx=_lots.findIndex(l=>l.title===lab);}
+  showLotKP(idx<0?0:idx);
+}
+function closeKP(){document.getElementById('kpModalWrap').style.display='none';}
+function cpKP(i){const t=document.getElementById('kptxt_'+i);if(!t)return;t.select();try{document.execCommand('copy');}catch(e){}
+  try{navigator.clipboard&&navigator.clipboard.writeText(t.value);}catch(e){}}
+function _dl(name,bodyHtml){
+  const blob=new Blob(['﻿<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="utf-8"></head><body>'+bodyHtml+'</body></html>'],{type:'application/msword'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();a.remove();}
+function dlLotKP(which){
+  const lot=_lots[_lotIdx];if(!lot)return;const P=kpPrices(lot.total);
+  if(which==='all'){let b='';[0,1,2].forEach(i=>{b+=lotKpHtml(i,lot,P[i])+'<p style="page-break-after:always"></p>';});_dl('КП_лот_3шт.doc',b);return;}
+  _dl('КП-'+(which+1)+'.doc',lotKpHtml(which,lot,P[which]));
+}
 function dlAllKP(){
+  const lots=kpLots();
+  if(!lots.length){alert('Нет закупочных строк с суммой > 0.');return;}
   let body='<h2>Коммерческие предложения (мониторинг цен, п. 8.3 № 189)</h2>';
-  dtl.forEach(G=>G.rows.forEach(r=>{
-    const L=LIM23.find(x=>x.n===r.dir)||{};const X=(+r.qty||0)*(+r.rate||0);
-    if(!L.k||X<=0)return;
-    const P=kpPrices(X),up=P.map(p=>Math.round(p/(r.qty||1)));
-    const c={stat:dirLabel(r.dir)+' — '+L.t,desc:r.name,unit:r.unit,qty:r.qty||1};
-    body+=`<h3>${r.name}</h3>`;
-    [0,1,2].forEach(i=>{body+=kpOneHtml(i,c,P[i],up[i])+'<p style="page-break-after:always"></p>';});
-  }));
-  _dl('Все_КП_по_смете.doc',body);
+  lots.forEach(lot=>{const P=kpPrices(lot.total);
+    body+=`<h3>${esc(lot.title)}</h3>`;
+    [0,1,2].forEach(i=>{body+=lotKpHtml(i,lot,P[i])+'<p style="page-break-after:always"></p>';});});
+  _dl('Все_КП_по_лотам.doc',body);
 }
 function dlSmetaDoc(){
   const R=dtaxRates();let body='<h2>Детальная смета затрат</h2><table border="1" cellspacing="0" cellpadding="5" style="border-collapse:collapse;width:100%;font-family:\'Times New Roman\'"><tr><th>Наименование</th><th>Ед.</th><th>Кол-во</th><th>Ставка, ₽</th><th>Сумма, ₽</th><th>Напр. № 189</th></tr>';
