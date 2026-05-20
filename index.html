@@ -1169,11 +1169,18 @@ function cpKP(i){const t=document.getElementById('kptxt_'+i);if(!t)return;t.sele
 function _dl(name,bodyHtml){
   const blob=new Blob(['﻿<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="utf-8"></head><body>'+bodyHtml+'</body></html>'],{type:'application/msword'});
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();a.remove();}
-function _kpSafe(name){return String(name||'').replace(/[\/\\:*?"<>|]+/g,'').replace(/\s+/g,' ').trim().slice(0,80);}
+function _kpSafe(name){
+  let s=String(name||'');
+  // Оставляем только безопасные символы: русские/латинские буквы, цифры, пробел, точку, тире, скобки, запятую.
+  s=s.replace(/[^а-яА-ЯёЁa-zA-Z0-9 .\-(),]+/g,' ');
+  s=s.replace(/\s+/g,' ').trim().slice(0,60).trim();
+  s=s.replace(/[ .\-]+$/,'');
+  return s||'lot';
+}
 function _kpFileName(lot,which){
   const t=_kpSafe(lot&&lot.title);
   if(which==='all')return `КП ${t} (3 шт).doc`;
-  return `КП ${t} №${which+1}.doc`;
+  return `КП ${t} N${which+1}.doc`;
 }
 function dlLotByIdx(idx){_kpRefresh();_lotIdx=idx;dlLotKP('all');}
 function dlLotKP(which){
