@@ -107,14 +107,18 @@
   .tabs button.active{color:var(--blue);background:#fff;box-shadow:0 -2px 0 var(--blue) inset}
   /* смета */
   .smeta-wrap{max-width:1240px;margin:0 auto;padding:18px 18px 80px}
-  #detailView{max-width:none;width:100%;padding-left:24px;padding-right:24px}
-  #detailView .sm-card{max-width:none}
-  table.sm#dtlTable{width:100%}
-  #detailView .dstick{position:sticky;top:0;z-index:9;background:#eef2f6;padding:6px 0 10px}
-  table#dtlTable tr.hdr th{position:sticky;top:var(--dstick,0);z-index:6;background:var(--hd);
+  #detailView,#compactView{max-width:none;width:100%;padding-left:24px;padding-right:24px}
+  #detailView .sm-card,#compactView .sm-card{max-width:none}
+  table.sm#dtlTable,table.sm#cmpTable{width:100%}
+  #detailView .dstick,#compactView .dstick{position:sticky;top:0;z-index:9;background:#eef2f6;padding:6px 0 10px}
+  table#dtlTable tr.hdr th,table#cmpTable tr.hdr th{position:sticky;top:var(--dstick,0);z-index:6;background:var(--hd);
     box-shadow:0 2px 0 rgba(15,23,42,.12)}
-  table#dtlTable tr.macro td{background:#cbd5e1;font-weight:800;font-size:14px;
+  table#dtlTable tr.macro td,table#cmpTable tr.macro td{background:#cbd5e1;font-weight:800;font-size:14px;
     padding:10px 12px;position:sticky;top:calc(var(--dstick,0) + 34px);z-index:5}
+  /* статусные чипы и Напр./Форма — компактнее, чтобы не «съедали» столбец Статус */
+  table#dtlTable td.stc,table#cmpTable td.stc{min-width:130px;white-space:normal}
+  table#dtlTable td.stc .st,table#cmpTable td.stc .st{white-space:normal;line-height:1.35;display:inline-block;max-width:100%}
+  table#dtlTable td.dir select,table#cmpTable td.dir select{max-width:200px}
   tr.macro .mtog{cursor:pointer;user-select:none}
   tr.macro .msum{float:right;font-weight:700}
   .sm-card{background:var(--panel);border:1px solid var(--line);border-radius:14px;
@@ -975,7 +979,9 @@ function recalcDetail(){
   syncStick();
 }
 function syncStick(){
-  const s=document.getElementById('dStick');
+  const cView=document.getElementById('compactView');
+  const cActive=cView&&cView.style.display!=='none';
+  const s=document.getElementById(cActive?'cStick':'dStick');
   if(s&&s.offsetHeight)document.documentElement.style.setProperty('--dstick',s.offsetHeight+'px');
 }
 /* --- КП --- */
