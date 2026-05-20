@@ -1072,14 +1072,11 @@ function kpLots(){
 }
 function lotKpHtml(si,lot,price){
   const s=KP_SUP[si], k=lot.total?price/lot.total:1;
-  const hasMon=lot.items.some(it=>(it.mon||1)>1);
   const rows=lot.items.map(it=>{
     const mon=Math.max(1,+it.mon||1), qty=+it.qty||1;
     const up=Math.round((it.rate||0)*k), sm=up*qty*mon;
-    return `<tr><td>${esc(it.name)}</td><td align="center">${esc(it.unit||'усл.')}</td><td align="center">${qty}</td>${hasMon?`<td align="center">${mon}</td>`:''}<td align="right">${up.toLocaleString('ru-RU')}</td><td align="right">${sm.toLocaleString('ru-RU')}</td></tr>`;
+    return `<tr><td>${esc(it.name)}</td><td align="center">${esc(it.unit||'усл.')}</td><td align="center">${qty}</td><td align="center">${mon}</td><td align="right">${up.toLocaleString('ru-RU')}</td><td align="right">${sm.toLocaleString('ru-RU')}</td></tr>`;
   }).join('');
-  const colsHdr=`<th>Наименование</th><th>Ед.</th><th>Кол-во</th>${hasMon?'<th>Мес</th>':''}<th>Цена за ед., ₽${hasMon?' / мес':''}</th><th>Сумма, ₽</th>`;
-  const totColspan=hasMon?5:4;
   return `<div style="font-family:'Times New Roman',serif;font-size:13pt">
    <p style="text-align:right">[Бланк: ${s.n}] · [ИНН/КПП, адрес, тел., e-mail]</p>
    <p style="text-align:right">Исх. № [___] от «[__]» [_____] 2026 г.</p>
@@ -1087,18 +1084,16 @@ function lotKpHtml(si,lot,price){
    <p>Кому: [Наименование организации-заявителя], для участия в отборе на предоставление субсидий Комитета по культуре Санкт-Петербурга.</p>
    <p>${s.ph}</p><p><b>Предмет:</b> ${esc(lot.title)}</p>
    <table border="1" cellspacing="0" cellpadding="6" style="border-collapse:collapse;width:100%">
-    <tr>${colsHdr}</tr>
+    <tr><th>Наименование</th><th>Ед.</th><th>Кол-во ед.</th><th>Кол-во мес.</th><th>Ставка, ₽</th><th>Сумма, ₽</th></tr>
     ${rows}
-    <tr><td colspan="${totColspan}" align="right"><b>Итого:</b></td><td align="right"><b>${Math.round(price).toLocaleString('ru-RU')} ₽</b></td></tr>
+    <tr><td colspan="5" align="right"><b>Итого:</b></td><td align="right"><b>${Math.round(price).toLocaleString('ru-RU')} ₽</b></td></tr>
    </table><p>${s.out}</p><p>Руководитель ${s.n} ______________ / [ФИО] / М.П.</p></div>`;
 }
 function lotKpPlain(si,lot,price){const s=KP_SUP[si], k=lot.total?price/lot.total:1;
   const ln=lot.items.map(it=>{
     const mon=Math.max(1,+it.mon||1), qty=+it.qty||1;
     const up=Math.round((it.rate||0)*k), sm=up*qty*mon;
-    const monPart=mon>1?` × ${mon} мес`:'';
-    const rateSuffix=mon>1?'/мес':'';
-    return `• ${it.name} — ${qty} ${it.unit||'усл.'}${monPart} × ${up.toLocaleString('ru-RU')} ₽${rateSuffix} = ${sm.toLocaleString('ru-RU')} ₽`;
+    return `• ${it.name} — ${qty} ${it.unit||'усл.'} × ${mon} мес × ${up.toLocaleString('ru-RU')} ₽ = ${sm.toLocaleString('ru-RU')} ₽`;
   }).join('\n');
   return `${s.n}\nИсх. № [___] от «[__]» [_____] 2026 г.\n\nКОММЕРЧЕСКОЕ ПРЕДЛОЖЕНИЕ\nКому: [Наименование организации-заявителя]\n\n${s.ph}\nПредмет: ${lot.title}\n\n${ln}\n\nИТОГО: ${Math.round(price).toLocaleString('ru-RU')} ₽\n\n${s.out}\nРуководитель ______________ / [ФИО] / М.П.`;}
 let _lots=[],_lotIdx=0;
