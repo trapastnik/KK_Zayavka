@@ -912,7 +912,7 @@ const FORMS=[['','— подряд / юрлицо (без взносов)'],['gp
 function renderDetail(){
   const el=document.getElementById('dtlTable');if(!el)return;
   let h='<tr class="hdr"><th class="r" style="width:42px">№</th><th>Наименование</th><th class="r">Ед.</th><th class="r">Кол-во</th>'+
-    '<th class="r">Мес</th><th class="r">Занятость&nbsp;%</th><th class="r">Ставка, ₽</th><th class="r">Сумма, ₽</th><th>Напр. № 189</th><th>Форма</th><th>Статус (лимит)</th><th>Действия</th></tr>';
+    '<th class="r">Мес</th><th class="r">Занятость&nbsp;%</th><th class="r">Ставка, ₽</th><th class="r">Сумма, ₽</th><th>Напр. № 189</th><th>Подрядчики</th><th>Статус (лимит)</th><th>Действия</th></tr>';
   const MAC=[...new Set(dtl.map(b=>b.macro||'—'))];
   let curM=null;
   dtl.forEach((G,gi)=>{
@@ -1346,7 +1346,7 @@ function resetCmp(){
 function renderCompact(){
   const el=document.getElementById('cmpTable');if(!el)return;
   let h='<tr class="hdr"><th class="r" style="width:42px">№</th><th>Наименование</th><th class="r">Ед.</th><th class="r">Кол-во</th>'+
-    '<th class="r">Мес</th><th class="r">Занятость&nbsp;%</th><th class="r">Ставка, ₽</th><th class="r">Сумма, ₽</th><th>Напр. № 189</th><th>Форма</th><th>Статус (лимит)</th><th>Действия</th></tr>';
+    '<th class="r">Мес</th><th class="r">Занятость&nbsp;%</th><th class="r">Ставка, ₽</th><th class="r">Сумма, ₽</th><th>Напр. № 189</th><th>Подрядчики</th><th>Статус (лимит)</th><th>Действия</th></tr>';
   const MAC=[...new Set(cmp.map(b=>b.macro||'—'))];
   let curM=null;
   cmp.forEach((G,gi)=>{
@@ -1679,7 +1679,21 @@ function load(){
   if(dck&&typeof d.dScoreChk==='boolean')dck.checked=d.dScoreChk;
   if(dcv&&d.dScoreVal!=null&&d.dScoreVal!=='')dcv.value=d.dScoreVal;
   if(Array.isArray(d.cmp)&&d.cmp.length){
-    if(d.cmpVer===CMP_VER)cmp=d.cmp;
+    if(d.cmpVer===CMP_VER){
+      // Точечная миграция: обновляем тексты заголовков, не трогая числовые правки пользователя
+      try{
+        if(d.cmp[0]){
+          if(d.cmp[0].g && /Аренда территорий, помещений/i.test(d.cmp[0].g))
+            d.cmp[0].g='1. Организация и проведение культурно-просветительских мероприятий, художественно-декорационное оформление';
+          if(d.cmp[0].macro && /Аренда площадок и техническое обеспечение/i.test(d.cmp[0].macro))
+            d.cmp[0].macro='1. Организация и проведение мероприятий';
+          const r=d.cmp[0].rows&&d.cmp[0].rows[2];
+          if(r&&r.name&&/Санитарно-гигиеническое обеспечение и уборка точек/i.test(r.name))
+            r.name='Техническое обеспечение, в т.ч. санитарно-гигиеническое обеспечение работоспособности VR-зон';
+        }
+      }catch(e){}
+      cmp=d.cmp;
+    }
     else{
       // Версия в localStorage не совпала с кодом — сохраняем старые данные в бэкап-ключ,
       // чтобы их можно было достать позже (см. window.vr2Backups()).
