@@ -1035,39 +1035,51 @@ const KP_SUP=[
 ];
 function esc(x){return (''+x).replace(/&/g,'&amp;').replace(/</g,'&lt;');}
 function kpMode(){return (document.querySelector('input[name="kpmode"]:checked')||{}).value||'dir';}
+function _kpItem(r){
+  // Месяцы — отдельной колонкой; занятость (%) сворачиваем в эффективную ставку,
+  // чтобы сумма строки = qty × mon × rate_eff совпала с rsum(r).
+  const empF=(r.emp==null?1:(+r.emp||0)/100);
+  return {name:r.name,unit:r.unit,qty:+r.qty||1,mon:rmon(r),rate:(+r.rate||0)*empF};
+}
 function kpLots(){
   const mode=kpMode(), out=[];
   const SRC=(typeof _kpSrc!=='undefined'&&_kpSrc==='cmp')?cmp:dtl;
   if(mode==='row'){
     SRC.forEach(G=>G.rows.forEach(r=>{const L=LIM23.find(x=>x.n===r.dir)||{};const s=rsum(r);
-      if(L.k&&s>0)out.push({title:r.name,items:[{name:r.name,unit:r.unit,qty:(+r.qty||1)*rmon(r)*remp(r),rate:+r.rate||0}],total:s});}));
+      if(L.k&&s>0)out.push({title:r.name,items:[_kpItem(r)],total:s});}));
   }else if(mode==='group'){
     SRC.forEach(G=>{const items=[];let tot=0;
       G.rows.forEach(r=>{const L=LIM23.find(x=>x.n===r.dir)||{};const s=rsum(r);
-        if(L.k&&s>0){items.push({name:r.name,unit:r.unit,qty:(+r.qty||1)*rmon(r)*remp(r),rate:+r.rate||0});tot+=s;}});
+        if(L.k&&s>0){items.push(_kpItem(r));tot+=s;}});
       if(items.length)out.push({title:G.g,items,total:tot});});
   }else if(mode==='prod1'){
     const pit=[];let ptot=0;const map={};
     SRC.forEach(G=>{const isProd=/Производство/.test(G.g);
       G.rows.forEach(r=>{const L=LIM23.find(x=>x.n===r.dir)||{};const s=rsum(r);if(!(L.k&&s>0))return;
-        if(isProd){pit.push({name:r.name,unit:r.unit,qty:(+r.qty||1)*rmon(r)*remp(r),rate:+r.rate||0});ptot+=s;}
+        if(isProd){pit.push(_kpItem(r));ptot+=s;}
         else{if(!map[r.dir])map[r.dir]={title:dirLabel(r.dir)+' — '+L.t,items:[],total:0};
-          map[r.dir].items.push({name:r.name,unit:r.unit,qty:(+r.qty||1)*rmon(r)*remp(r),rate:+r.rate||0});map[r.dir].total+=s;}});});
+          map[r.dir].items.push(_kpItem(r));map[r.dir].total+=s;}});});
     if(pit.length)out.push({title:'Производство собственного VR-контента (объединённый лот: большой/средний/малый формат)',items:pit,total:ptot});
     Object.keys(map).sort((a,b)=>a-b).forEach(k=>out.push(map[k]));
   }else{
     const map={};
     SRC.forEach(G=>G.rows.forEach(r=>{const L=LIM23.find(x=>x.n===r.dir)||{};const s=rsum(r);
       if(L.k&&s>0){if(!map[r.dir])map[r.dir]={title:dirLabel(r.dir)+' — '+L.t,items:[],total:0};
-        map[r.dir].items.push({name:r.name,unit:r.unit,qty:(+r.qty||1)*rmon(r)*remp(r),rate:+r.rate||0});map[r.dir].total+=s;}}));
+        map[r.dir].items.push(_kpItem(r));map[r.dir].total+=s;}}));
     Object.keys(map).sort((a,b)=>a-b).forEach(k=>out.push(map[k]));
   }
   return out;
 }
 function lotKpHtml(si,lot,price){
   const s=KP_SUP[si], k=lot.total?price/lot.total:1;
-  const rows=lot.items.map(it=>{const up=Math.round((it.rate||0)*k), sm=up*(it.qty||1);
-    return `<tr><td>${esc(it.name)}</td><td align="center">${esc(it.unit||'усл.')}</td><td align="center">${it.qty||1}</td><td align="right">${up.toLocaleString('ru-RU')}</td><td align="right">${sm.toLocaleString('ru-RU')}</td></tr>`;}).join('');
+  const hasMon=lot.items.some(it=>(it.mon||1)>1);
+  const rows=lot.items.map(it=>{
+    const mon=Math.max(1,+it.mon||1), qty=+it.qty||1;
+    const up=Math.round((it.rate||0)*k), sm=up*qty*mon;
+    return `<tr><td>${esc(it.name)}</td><td align="center">${esc(it.unit||'усл.')}</td><td align="center">${qty}</td>${hasMon?`<td align="center">${mon}</td>`:''}<td align="right">${up.toLocaleString('ru-RU')}</td><td align="right">${sm.toLocaleString('ru-RU')}</td></tr>`;
+  }).join('');
+  const colsHdr=`<th>Наименование</th><th>Ед.</th><th>Кол-во</th>${hasMon?'<th>Мес</th>':''}<th>Цена за ед., ₽${hasMon?' / мес':''}</th><th>Сумма, ₽</th>`;
+  const totColspan=hasMon?5:4;
   return `<div style="font-family:'Times New Roman',serif;font-size:13pt">
    <p style="text-align:right">[Бланк: ${s.n}] · [ИНН/КПП, адрес, тел., e-mail]</p>
    <p style="text-align:right">Исх. № [___] от «[__]» [_____] 2026 г.</p>
@@ -1075,13 +1087,19 @@ function lotKpHtml(si,lot,price){
    <p>Кому: [Наименование организации-заявителя], для участия в отборе на предоставление субсидий Комитета по культуре Санкт-Петербурга.</p>
    <p>${s.ph}</p><p><b>Предмет:</b> ${esc(lot.title)}</p>
    <table border="1" cellspacing="0" cellpadding="6" style="border-collapse:collapse;width:100%">
-    <tr><th>Наименование</th><th>Ед.</th><th>Кол-во</th><th>Цена за ед., ₽</th><th>Сумма, ₽</th></tr>
+    <tr>${colsHdr}</tr>
     ${rows}
-    <tr><td colspan="4" align="right"><b>Итого:</b></td><td align="right"><b>${Math.round(price).toLocaleString('ru-RU')} ₽</b></td></tr>
+    <tr><td colspan="${totColspan}" align="right"><b>Итого:</b></td><td align="right"><b>${Math.round(price).toLocaleString('ru-RU')} ₽</b></td></tr>
    </table><p>${s.out}</p><p>Руководитель ${s.n} ______________ / [ФИО] / М.П.</p></div>`;
 }
 function lotKpPlain(si,lot,price){const s=KP_SUP[si], k=lot.total?price/lot.total:1;
-  const ln=lot.items.map(it=>{const up=Math.round((it.rate||0)*k);return `• ${it.name} — ${it.qty||1} ${it.unit||'усл.'} × ${up.toLocaleString('ru-RU')} = ${(up*(it.qty||1)).toLocaleString('ru-RU')} ₽`;}).join('\n');
+  const ln=lot.items.map(it=>{
+    const mon=Math.max(1,+it.mon||1), qty=+it.qty||1;
+    const up=Math.round((it.rate||0)*k), sm=up*qty*mon;
+    const monPart=mon>1?` × ${mon} мес`:'';
+    const rateSuffix=mon>1?'/мес':'';
+    return `• ${it.name} — ${qty} ${it.unit||'усл.'}${monPart} × ${up.toLocaleString('ru-RU')} ₽${rateSuffix} = ${sm.toLocaleString('ru-RU')} ₽`;
+  }).join('\n');
   return `${s.n}\nИсх. № [___] от «[__]» [_____] 2026 г.\n\nКОММЕРЧЕСКОЕ ПРЕДЛОЖЕНИЕ\nКому: [Наименование организации-заявителя]\n\n${s.ph}\nПредмет: ${lot.title}\n\n${ln}\n\nИТОГО: ${Math.round(price).toLocaleString('ru-RU')} ₽\n\n${s.out}\nРуководитель ______________ / [ФИО] / М.П.`;}
 let _lots=[],_lotIdx=0;
 function openKPList(){
