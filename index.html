@@ -360,7 +360,14 @@
       </div>
     </div>
     <table class="sm" id="cmpTable"></table>
-    <div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap">
+    <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;font-size:13px;margin:14px 0 10px;padding:12px 14px;background:#f8fafc;border:1px solid var(--line);border-radius:10px">
+      <span><b>Укрупнение КП:</b></span>
+      <label style="display:flex;gap:6px;cursor:pointer"><input type="radio" name="kpmode" value="dir"> по направлению (рекомендую)</label>
+      <label style="display:flex;gap:6px;cursor:pointer"><input type="radio" name="kpmode" value="group"> по группе (блоку)</label>
+      <label style="display:flex;gap:6px;cursor:pointer"><input type="radio" name="kpmode" value="prod1"> производство — одним КП, остальное по направлению</label>
+      <label style="display:flex;gap:6px;cursor:pointer"><input type="radio" name="kpmode" value="row"> по каждой строке</label>
+    </div>
+    <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">
       <button style="border:1px solid var(--blue);background:var(--blue);color:#fff;border-radius:9px;padding:9px 14px;font-weight:600;cursor:pointer" onclick="openKPListCmp()">Сформировать КП по компактному бюджету</button>
       <button style="border:1px solid var(--line);background:#fff;border-radius:9px;padding:9px 14px;font-weight:600;cursor:pointer;color:#475569" onclick="dlSmetaCmpDoc()">Скачать смету (.doc)</button>
       <button style="border:1px solid #15803d;background:#fff;border-radius:9px;padding:9px 14px;font-weight:600;cursor:pointer;color:#15803d" onclick="dlSmetaCmpXls()">Скачать бюджет (Excel)</button>
@@ -1040,12 +1047,12 @@ function kpLots(){
       if(items.length)out.push({title:G.g,items,total:tot});});
   }else if(mode==='prod1'){
     const pit=[];let ptot=0;const map={};
-    SRC.forEach(G=>{const isProd=/^Производство/.test(G.g);
+    SRC.forEach(G=>{const isProd=/Производство/.test(G.g);
       G.rows.forEach(r=>{const L=LIM23.find(x=>x.n===r.dir)||{};const s=rsum(r);if(!(L.k&&s>0))return;
         if(isProd){pit.push({name:r.name,unit:r.unit,qty:(+r.qty||1)*rmon(r)*remp(r),rate:+r.rate||0});ptot+=s;}
         else{if(!map[r.dir])map[r.dir]={title:dirLabel(r.dir)+' — '+L.t,items:[],total:0};
           map[r.dir].items.push({name:r.name,unit:r.unit,qty:(+r.qty||1)*rmon(r)*remp(r),rate:+r.rate||0});map[r.dir].total+=s;}});});
-    if(pit.length)out.push({title:'Производство собственного VR-контента (15 фильмов: большой/средний/малый + лицензии/накладные)',items:pit,total:ptot});
+    if(pit.length)out.push({title:'Производство собственного VR-контента (объединённый лот: большой/средний/малый формат)',items:pit,total:ptot});
     Object.keys(map).sort((a,b)=>a-b).forEach(k=>out.push(map[k]));
   }else{
     const map={};
