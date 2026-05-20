@@ -1156,6 +1156,8 @@ function smetaTable(num,hideDir){ // num: true → ₽ с разделителя
   const R=dtaxRates();let grand=0;
   const fm=v=>num?Math.round(v).toLocaleString('ru-RU'):String(Math.round(v));
   const nCols=hideDir?9:10, taxRest=hideDir?1:2, totRest=hideDir?1:2;
+  // Для Excel: явно помечаем столбец № как текст (иначе «1.1» превращается в «01.Jan» по русской локали)
+  const idCell=v=>num?`<td>${v}</td>`:`<td style="mso-number-format:'@'" x:str>${v}</td>`;
   let b='<table border="1" cellspacing="0" cellpadding="5" style="border-collapse:collapse;width:100%;font-family:\'Times New Roman\'">'+
     '<tr><th>№</th><th>Наименование</th><th>Ед.</th><th>Кол-во</th><th>Мес</th><th>Занятость %</th><th>Ставка, ₽</th><th>Сумма, ₽</th>'+(hideDir?'':'<th>Напр. № 189</th>')+'<th>Форма</th></tr>';
   dtl.forEach((G,gi)=>{
@@ -1164,7 +1166,7 @@ function smetaTable(num,hideDir){ // num: true → ₽ с разделителя
     G.rows.forEach((r,ri)=>{const s=rsum(r);sub+=s;
       const fl=(FORMS.find(x=>x[0]===(r.tf||''))||['',''])[1];
       const rate=r.tf?(R[r.tf]||0):0;bTax+=s*rate;
-      b+=`<tr><td>${gi+1}.${ri+1}</td><td>${esc(r.name)}</td><td align="center">${esc(r.unit||'')}</td><td align="center">${r.qty}</td><td align="center">${rmon(r)}</td><td align="center">${r.emp==null?100:r.emp}%</td><td align="right">${fm(r.rate)}</td><td align="right">${fm(s)}</td>${hideDir?'':`<td>${esc(dirLabel(r.dir))}</td>`}<td>${esc(fl)}</td></tr>`;});
+      b+=`<tr>${idCell(`${gi+1}.${ri+1}`)}<td>${esc(r.name)}</td><td align="center">${esc(r.unit||'')}</td><td align="center">${r.qty}</td><td align="center">${rmon(r)}</td><td align="center">${r.emp==null?100:r.emp}%</td><td align="right">${fm(r.rate)}</td><td align="right">${fm(s)}</td>${hideDir?'':`<td>${esc(dirLabel(r.dir))}</td>`}<td>${esc(fl)}</td></tr>`;});
     if(bTax>0)b+=`<tr><td></td><td colspan="6">Страховые взносы по блоку (${R.n})</td><td align="right">${fm(bTax)}</td><td colspan="${taxRest}"></td></tr>`;
     sub+=bTax;grand+=sub;
     b+=`<tr><td colspan="7" align="right" style="font-weight:bold">Подытог Блока ${gi+1}:</td><td align="right" style="font-weight:bold">${fm(sub)}</td><td colspan="${totRest}"></td></tr>`;});
@@ -1415,6 +1417,7 @@ function smetaTableCmp(num,hideDir){
   const R=ctaxRates();let grand=0;
   const fm=v=>num?Math.round(v).toLocaleString('ru-RU'):String(Math.round(v));
   const nCols=hideDir?9:10, taxRest=hideDir?1:2, totRest=hideDir?1:2;
+  const idCell=v=>num?`<td>${v}</td>`:`<td style="mso-number-format:'@'" x:str>${v}</td>`;
   let b='<table border="1" cellspacing="0" cellpadding="5" style="border-collapse:collapse;width:100%;font-family:\'Times New Roman\'">'+
     '<tr><th>№</th><th>Наименование</th><th>Ед.</th><th>Кол-во</th><th>Мес</th><th>Занятость %</th><th>Ставка, ₽</th><th>Сумма, ₽</th>'+(hideDir?'':'<th>Напр. № 189</th>')+'<th>Форма</th></tr>';
   cmp.forEach((G,gi)=>{
@@ -1423,7 +1426,7 @@ function smetaTableCmp(num,hideDir){
     G.rows.forEach((r,ri)=>{const s=rsum(r);sub+=s;
       const fl=(FORMS.find(x=>x[0]===(r.tf||''))||['',''])[1];
       const rate=r.tf?(R[r.tf]||0):0;bTax+=s*rate;
-      b+=`<tr><td>${gi+1}.${ri+1}</td><td>${esc(r.name)}</td><td align="center">${esc(r.unit||'')}</td><td align="center">${r.qty}</td><td align="center">${rmon(r)}</td><td align="center">${r.emp==null?100:r.emp}%</td><td align="right">${fm(r.rate)}</td><td align="right">${fm(s)}</td>${hideDir?'':`<td>${esc(dirLabel(r.dir))}</td>`}<td>${esc(fl)}</td></tr>`;});
+      b+=`<tr>${idCell(`${gi+1}.${ri+1}`)}<td>${esc(r.name)}</td><td align="center">${esc(r.unit||'')}</td><td align="center">${r.qty}</td><td align="center">${rmon(r)}</td><td align="center">${r.emp==null?100:r.emp}%</td><td align="right">${fm(r.rate)}</td><td align="right">${fm(s)}</td>${hideDir?'':`<td>${esc(dirLabel(r.dir))}</td>`}<td>${esc(fl)}</td></tr>`;});
     if(bTax>0)b+=`<tr><td></td><td colspan="6">Страховые взносы по блоку (${R.n})</td><td align="right">${fm(bTax)}</td><td colspan="${taxRest}"></td></tr>`;
     sub+=bTax;grand+=sub;
     b+=`<tr><td colspan="7" align="right" style="font-weight:bold">Подытог Блока ${gi+1}:</td><td align="right" style="font-weight:bold">${fm(sub)}</td><td colspan="${totRest}"></td></tr>`;});
