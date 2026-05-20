@@ -1165,11 +1165,17 @@ function cpKP(i){const t=document.getElementById('kptxt_'+i);if(!t)return;t.sele
 function _dl(name,bodyHtml){
   const blob=new Blob(['﻿<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="utf-8"></head><body>'+bodyHtml+'</body></html>'],{type:'application/msword'});
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();a.remove();}
+function _kpSafe(name){return String(name||'').replace(/[\/\\:*?"<>|]+/g,'').replace(/\s+/g,' ').trim().slice(0,80);}
+function _kpFileName(lot,which){
+  const t=_kpSafe(lot&&lot.title);
+  if(which==='all')return `КП ${t} (3 шт).doc`;
+  return `КП ${t} №${which+1}.doc`;
+}
 function dlLotByIdx(idx){if(!_lots.length)_lots=kpLots();_lotIdx=idx;dlLotKP('all');}
 function dlLotKP(which){
   const lot=_lots[_lotIdx];if(!lot)return;const P=kpPrices(lot.total);
-  if(which==='all'){let b='';[0,1,2].forEach(i=>{b+=lotKpHtml(i,lot,P[i])+'<p style="page-break-after:always"></p>';});_dl('КП_лот_3шт.doc',b);return;}
-  _dl('КП-'+(which+1)+'.doc',lotKpHtml(which,lot,P[which]));
+  if(which==='all'){let b='';[0,1,2].forEach(i=>{b+=lotKpHtml(i,lot,P[i])+'<p style="page-break-after:always"></p>';});_dl(_kpFileName(lot,'all'),b);return;}
+  _dl(_kpFileName(lot,which),lotKpHtml(which,lot,P[which]));
 }
 function dlAllKP(){
   const lots=kpLots();
