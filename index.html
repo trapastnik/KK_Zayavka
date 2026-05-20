@@ -1204,24 +1204,27 @@ function dlAllKP(){
   _dl('Все_КП_по_лотам.doc',body);
 }
 function smetaTable(num,hideDir){ // num: true → ₽ с разделителями (doc), false → числом (xls); hideDir: скрыть столбец «Напр. № 189»
-  const R=dtaxRates();let grand=0;
+  const R=dtaxRates();let grand=0,grandReq=0,grandCof=0;
   const fm=v=>num?Math.round(v).toLocaleString('ru-RU'):String(Math.round(v));
-  const nCols=hideDir?9:10, taxRest=hideDir?1:2, totRest=hideDir?1:2;
+  // +2 колонки «Запрашиваемые средства» и «Софинансирование» в конце
+  const nCols=(hideDir?9:10)+2, taxRest=(hideDir?1:2)+2, totRest=(hideDir?1:2)+2;
   // Для Excel: явно помечаем столбец № как текст (иначе «1.1» превращается в «01.Jan» по русской локали)
   const idCell=v=>num?`<td>${v}</td>`:`<td style="mso-number-format:'@'" x:str>${v}</td>`;
   let b='<table border="1" cellspacing="0" cellpadding="5" style="border-collapse:collapse;width:100%;font-family:\'Times New Roman\'">'+
-    '<tr><th>№</th><th>Наименование</th><th>Ед.</th><th>Кол-во</th><th>Мес</th><th>Занятость %</th><th>Ставка, ₽</th><th>Сумма, ₽</th>'+(hideDir?'':'<th>Напр. № 189</th>')+'<th>Форма</th></tr>';
+    '<tr><th>№</th><th>Наименование</th><th>Ед.</th><th>Кол-во</th><th>Мес</th><th>Занятость %</th><th>Ставка, ₽</th><th>Сумма, ₽</th>'+(hideDir?'':'<th>Напр. № 189</th>')+'<th>Подрядчики</th><th>Запрашиваемые средства, ₽</th><th>Софинансирование (объём собств. средств), ₽</th></tr>';
   dtl.forEach((G,gi)=>{
     b+=`<tr><td colspan="${nCols}" style="background:#eef;font-weight:bold">Блок ${gi+1}. ${esc(G.g)}</td></tr>`;
-    let sub=0,bTax=0;
+    let sub=0,bTax=0,subReq=0,subCof=0;
     G.rows.forEach((r,ri)=>{const s=rsum(r);sub+=s;
       const fl=(FORMS.find(x=>x[0]===(r.tf||''))||['',''])[1];
       const rate=r.tf?(R[r.tf]||0):0;bTax+=s*rate;
-      b+=`<tr>${idCell(`${gi+1}.${ri+1}`)}<td>${esc(r.name)}</td><td align="center">${esc(r.unit||'')}</td><td align="center">${r.qty}</td><td align="center">${rmon(r)}</td><td align="center">${r.emp==null?100:r.emp}%</td><td align="right">${fm(r.rate)}</td><td align="right">${fm(s)}</td>${hideDir?'':`<td>${esc(dirLabel(r.dir))}</td>`}<td>${esc(fl)}</td></tr>`;});
-    if(bTax>0)b+=`<tr><td></td><td colspan="6">Страховые взносы по блоку (${R.n})</td><td align="right">${fm(bTax)}</td><td colspan="${taxRest}"></td></tr>`;
-    sub+=bTax;grand+=sub;
-    b+=`<tr><td colspan="7" align="right" style="font-weight:bold">Подытог Блока ${gi+1}:</td><td align="right" style="font-weight:bold">${fm(sub)}</td><td colspan="${totRest}"></td></tr>`;});
-  b+=`<tr><td colspan="7" align="right" style="font-weight:bold">ИТОГО смета (S):</td><td align="right" style="font-weight:bold">${fm(grand)}</td><td colspan="${totRest}"></td></tr></table>`;
+      const cof=Math.min(Math.max(0,+r.cof||0),s), req=Math.max(0,s-cof);
+      subReq+=req; subCof+=cof;
+      b+=`<tr>${idCell(`${gi+1}.${ri+1}`)}<td>${esc(r.name)}</td><td align="center">${esc(r.unit||'')}</td><td align="center">${r.qty}</td><td align="center">${rmon(r)}</td><td align="center">${r.emp==null?100:r.emp}%</td><td align="right">${fm(r.rate)}</td><td align="right">${fm(s)}</td>${hideDir?'':`<td>${esc(dirLabel(r.dir))}</td>`}<td>${esc(fl)}</td><td align="right">${fm(req)}</td><td align="right">${fm(cof)}</td></tr>`;});
+    if(bTax>0){subReq+=bTax;b+=`<tr><td></td><td colspan="6">Страховые взносы по блоку (${R.n})</td><td align="right">${fm(bTax)}</td><td colspan="${taxRest-2}"></td><td align="right">${fm(bTax)}</td><td align="right">0</td></tr>`;}
+    sub+=bTax;grand+=sub;grandReq+=subReq;grandCof+=subCof;
+    b+=`<tr><td colspan="7" align="right" style="font-weight:bold">Подытог Блока ${gi+1}:</td><td align="right" style="font-weight:bold">${fm(sub)}</td><td colspan="${totRest-3}"></td><td align="right" style="font-weight:bold">${fm(subReq)}</td><td align="right" style="font-weight:bold">${fm(subCof)}</td></tr>`;});
+  b+=`<tr><td colspan="7" align="right" style="font-weight:bold">ИТОГО смета (S):</td><td align="right" style="font-weight:bold">${fm(grand)}</td><td colspan="${totRest-3}"></td><td align="right" style="font-weight:bold">${fm(grandReq)}</td><td align="right" style="font-weight:bold">${fm(grandCof)}</td></tr></table>`;
   return b;
 }
 function dlSmetaDoc(){_dl('Детальная_смета.doc','<h2>Детальная смета затрат</h2>'+smetaTable(true,false));}
@@ -1279,10 +1282,10 @@ function showTab(name){
 /* ===== КОМПАКТНЫЙ БЮДЖЕТ — структура согласована с фондом (10 блоков) ===== */
 const CMP_VER=5;
 const CMP_DEF=[
- {g:'1. Аренда территорий, помещений, сценических площадок; техническое обеспечение проведения мероприятий', macro:'1. Аренда площадок и техническое обеспечение', rows:[
+ {g:'1. Организация и проведение культурно-просветительских мероприятий, художественно-декорационное оформление', macro:'1. Организация и проведение мероприятий', rows:[
    {name:'Организация и проведение культурно просветительских мероприятий по воспитанию молодежи на базе библиотек. По адресам: Наб. реки Фонтанки, 44; Невский пр., 20; Брантовская дорога, 3 ТЦ «Охта Молл»; Московский пр., 86; Кожевенная линия, 40д, 3-й этаж, «Студия 42»; Гражданский, 121. Предоставление линейного персонала силами библиотеки.',unit:'точка',qty:7,rate:55000,mon:4,dir:1,tf:''},
    {name:'Художественно-декорационное оформление иммерсивных VR-зон',unit:'точка',qty:7,rate:85000,mon:1,dir:3,tf:''},
-   {name:'Санитарно-гигиеническое обеспечение и уборка точек, дежурство',unit:'точка',qty:7,rate:13000,mon:4,dir:18,tf:''}]},
+   {name:'Техническое обеспечение, в т.ч. санитарно-гигиеническое обеспечение работоспособности VR-зон',unit:'точка',qty:7,rate:13000,mon:4,dir:18,tf:''}]},
  {g:'2. Аренда VR-оборудования с лицензионной медиатекой', macro:'2. Аренда VR-оборудования', rows:[
    {name:'Аренда камеры Titan / риг 360° для съёмок VR-контента',unit:'съём. день',qty:15,rate:80000,mon:1,dir:4,tf:''},
    {name:'Аренда VR-комплекта (единый договор аренды/услуг технологического партнёра): 35 шлемов Pico 4 или аналог + комплекты управления + уникальное ПО управления парком и сценариями + лицензионная медиатека ~30 ед. + пуско-наладка, обучение, техсопровождение.',unit:'договор/мес',qty:35,rate:25000,mon:4,dir:4,tf:''}]},
@@ -1459,23 +1462,27 @@ function genKpCmp(gi,ri){
   showLotKP(idx<0?0:idx);
 }
 function smetaTableCmp(num,hideDir){
-  const R=ctaxRates();let grand=0;
+  const R=ctaxRates();let grand=0,grandReq=0,grandCof=0;
   const fm=v=>num?Math.round(v).toLocaleString('ru-RU'):String(Math.round(v));
-  const nCols=hideDir?9:10, taxRest=hideDir?1:2, totRest=hideDir?1:2;
+  // +2 колонки «Запрашиваемые средства» и «Софинансирование» в конце
+  const nCols=(hideDir?9:10)+2, taxRest=(hideDir?1:2)+2, totRest=(hideDir?1:2)+2;
   const idCell=v=>num?`<td>${v}</td>`:`<td style="mso-number-format:'@'" x:str>${v}</td>`;
   let b='<table border="1" cellspacing="0" cellpadding="5" style="border-collapse:collapse;width:100%;font-family:\'Times New Roman\'">'+
-    '<tr><th>№</th><th>Наименование</th><th>Ед.</th><th>Кол-во</th><th>Мес</th><th>Занятость %</th><th>Ставка, ₽</th><th>Сумма, ₽</th>'+(hideDir?'':'<th>Напр. № 189</th>')+'<th>Форма</th></tr>';
+    '<tr><th>№</th><th>Наименование</th><th>Ед.</th><th>Кол-во</th><th>Мес</th><th>Занятость %</th><th>Ставка, ₽</th><th>Сумма, ₽</th>'+(hideDir?'':'<th>Напр. № 189</th>')+'<th>Подрядчики</th><th>Запрашиваемые средства, ₽</th><th>Софинансирование (объём собств. средств), ₽</th></tr>';
   cmp.forEach((G,gi)=>{
     b+=`<tr><td colspan="${nCols}" style="background:#eef;font-weight:bold">Блок ${gi+1}. ${esc(G.g)}</td></tr>`;
-    let sub=0,bTax=0;
+    let sub=0,bTax=0,subReq=0,subCof=0;
     G.rows.forEach((r,ri)=>{const s=rsum(r);sub+=s;
       const fl=(FORMS.find(x=>x[0]===(r.tf||''))||['',''])[1];
       const rate=r.tf?(R[r.tf]||0):0;bTax+=s*rate;
-      b+=`<tr>${idCell(`${gi+1}.${ri+1}`)}<td>${esc(r.name)}</td><td align="center">${esc(r.unit||'')}</td><td align="center">${r.qty}</td><td align="center">${rmon(r)}</td><td align="center">${r.emp==null?100:r.emp}%</td><td align="right">${fm(r.rate)}</td><td align="right">${fm(s)}</td>${hideDir?'':`<td>${esc(dirLabel(r.dir))}</td>`}<td>${esc(fl)}</td></tr>`;});
-    if(bTax>0)b+=`<tr><td></td><td colspan="6">Страховые взносы по блоку (${R.n})</td><td align="right">${fm(bTax)}</td><td colspan="${taxRest}"></td></tr>`;
-    sub+=bTax;grand+=sub;
-    b+=`<tr><td colspan="7" align="right" style="font-weight:bold">Подытог Блока ${gi+1}:</td><td align="right" style="font-weight:bold">${fm(sub)}</td><td colspan="${totRest}"></td></tr>`;});
-  b+=`<tr><td colspan="7" align="right" style="font-weight:bold">ИТОГО смета (S):</td><td align="right" style="font-weight:bold">${fm(grand)}</td><td colspan="${totRest}"></td></tr></table>`;
+      // По умолчанию: вся сумма в Запросе, 0 в Софинан (если в строке есть r.cof — учитываем)
+      const cof=Math.min(Math.max(0,+r.cof||0),s), req=Math.max(0,s-cof);
+      subReq+=req; subCof+=cof;
+      b+=`<tr>${idCell(`${gi+1}.${ri+1}`)}<td>${esc(r.name)}</td><td align="center">${esc(r.unit||'')}</td><td align="center">${r.qty}</td><td align="center">${rmon(r)}</td><td align="center">${r.emp==null?100:r.emp}%</td><td align="right">${fm(r.rate)}</td><td align="right">${fm(s)}</td>${hideDir?'':`<td>${esc(dirLabel(r.dir))}</td>`}<td>${esc(fl)}</td><td align="right">${fm(req)}</td><td align="right">${fm(cof)}</td></tr>`;});
+    if(bTax>0){subReq+=bTax;b+=`<tr><td></td><td colspan="6">Страховые взносы по блоку (${R.n})</td><td align="right">${fm(bTax)}</td><td colspan="${taxRest-2}"></td><td align="right">${fm(bTax)}</td><td align="right">0</td></tr>`;}
+    sub+=bTax;grand+=sub;grandReq+=subReq;grandCof+=subCof;
+    b+=`<tr><td colspan="7" align="right" style="font-weight:bold">Подытог Блока ${gi+1}:</td><td align="right" style="font-weight:bold">${fm(sub)}</td><td colspan="${totRest-3}"></td><td align="right" style="font-weight:bold">${fm(subReq)}</td><td align="right" style="font-weight:bold">${fm(subCof)}</td></tr>`;});
+  b+=`<tr><td colspan="7" align="right" style="font-weight:bold">ИТОГО смета (S):</td><td align="right" style="font-weight:bold">${fm(grand)}</td><td colspan="${totRest-3}"></td><td align="right" style="font-weight:bold">${fm(grandReq)}</td><td align="right" style="font-weight:bold">${fm(grandCof)}</td></tr></table>`;
   return b;
 }
 function dlSmetaCmpDoc(){_dl('Компактная_смета.doc','<h2>Компактная смета затрат (укрупнённая по форматам и блокам)</h2>'+smetaTableCmp(true,false));}
