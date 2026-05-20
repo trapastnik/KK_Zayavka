@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Оценка проекта ПЕТЕРБУРГ.VR — калькулятор по критериям</title>
+<!-- html-docx-js: конвертер HTML → настоящий .docx -->
+<script src="https://unpkg.com/html-docx-js/dist/html-docx.js" defer></script>
 <style>
   :root{
     --bg:#0f1720; --panel:#fff; --ink:#1c2733; --mut:#64748b; --line:#e2e8f0;
@@ -306,8 +308,8 @@
     </div>
     <div style="margin-top:6px;display:flex;gap:8px;flex-wrap:wrap">
       <button class="print" style="border:1px solid var(--blue);background:var(--blue);color:#fff;border-radius:9px;padding:9px 14px;font-weight:600;cursor:pointer" onclick="_kpSrc='dtl';openKPList()">Сформировать КП (список лотов)</button>
-      <button style="border:1px solid var(--blue);background:#fff;border-radius:9px;padding:9px 14px;font-weight:600;cursor:pointer;color:var(--blue)" onclick="_kpSrc='dtl';dlAllKP()">Скачать ВСЕ КП по лотам (.doc)</button>
-      <button style="border:1px solid var(--line);background:#fff;border-radius:9px;padding:9px 14px;font-weight:600;cursor:pointer;color:#475569" onclick="dlSmetaDoc()">Скачать смету (.doc)</button>
+      <button style="border:1px solid var(--blue);background:#fff;border-radius:9px;padding:9px 14px;font-weight:600;cursor:pointer;color:var(--blue)" onclick="_kpSrc='dtl';dlAllKP()">Скачать ВСЕ КП по лотам (.docx)</button>
+      <button style="border:1px solid var(--line);background:#fff;border-radius:9px;padding:9px 14px;font-weight:600;cursor:pointer;color:#475569" onclick="dlSmetaDoc()">Скачать смету (.docx)</button>
       <button style="border:1px solid #15803d;background:#fff;border-radius:9px;padding:9px 14px;font-weight:600;cursor:pointer;color:#15803d" onclick="dlSmetaXls()">Скачать бюджет (Excel)</button>
       <button style="border:1px solid var(--line);background:#fff;border-radius:9px;padding:9px 14px;font-weight:600;cursor:pointer;color:#475569" onclick="undoDel()" title="Вернуть последнюю удалённую строку">↶ Вернуть удалённую строку</button>
     </div>
@@ -374,7 +376,7 @@
     </div>
     <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">
       <button style="border:1px solid var(--blue);background:var(--blue);color:#fff;border-radius:9px;padding:9px 14px;font-weight:600;cursor:pointer" onclick="openKPListCmp()">Сформировать КП по компактному бюджету</button>
-      <button style="border:1px solid var(--line);background:#fff;border-radius:9px;padding:9px 14px;font-weight:600;cursor:pointer;color:#475569" onclick="dlSmetaCmpDoc()">Скачать смету (.doc)</button>
+      <button style="border:1px solid var(--line);background:#fff;border-radius:9px;padding:9px 14px;font-weight:600;cursor:pointer;color:#475569" onclick="dlSmetaCmpDoc()">Скачать смету (.docx)</button>
       <button style="border:1px solid #15803d;background:#fff;border-radius:9px;padding:9px 14px;font-weight:600;cursor:pointer;color:#15803d" onclick="dlSmetaCmpXls()">Скачать бюджет (Excel)</button>
       <button style="border:1px solid var(--line);background:#fff;border-radius:9px;padding:9px 14px;font-weight:600;cursor:pointer;color:#475569" onclick="undoDelCmp()" title="Вернуть последнюю удалённую строку">↶ Вернуть удалённую строку</button>
       <button style="border:1px solid var(--line);background:#fff;border-radius:9px;padding:9px 14px;font-weight:600;cursor:pointer;color:#475569" onclick="resetCmp()" title="Сбросить компактный бюджет к исходному варианту">↺ Сбросить компактный к исходному</button>
@@ -1132,9 +1134,9 @@ function openKPList(){
      <div><b>${esc(lot.title.slice(0,80))}</b><div style="color:var(--mut);font-size:12px">${lot.items.length} поз. · итого ${fmtRub(lot.total)}</div></div>
      <div style="display:flex;gap:6px;white-space:nowrap">
        <button onclick="showLotKP(${idx})" style="border:1px solid var(--blue);background:var(--blue);color:#fff;border-radius:7px;padding:6px 12px;font-weight:600;cursor:pointer">3 КП</button>
-       <button onclick="dlLotByIdx(${idx})" title="Скачать 3 КП этой статьи одним .doc" style="border:1px solid var(--blue);background:#fff;color:var(--blue);border-radius:7px;padding:6px 12px;font-weight:600;cursor:pointer">↓ .doc</button>
+       <button onclick="dlLotByIdx(${idx})" title="Скачать 3 КП этой статьи одним .docx" style="border:1px solid var(--blue);background:#fff;color:var(--blue);border-radius:7px;padding:6px 12px;font-weight:600;cursor:pointer">↓ .docx</button>
      </div></div>`).join('')}
-   <button onclick="dlAllKP()" style="border:1px solid var(--blue);background:var(--blue);color:#fff;border-radius:8px;padding:9px 14px;font-weight:600;cursor:pointer;margin-top:8px">Скачать ВСЕ КП по лотам одним .doc</button>`;
+   <button onclick="dlAllKP()" style="border:1px solid var(--blue);background:var(--blue);color:#fff;border-radius:8px;padding:9px 14px;font-weight:600;cursor:pointer;margin-top:8px">Скачать ВСЕ КП по лотам одним .docx</button>`;
   document.getElementById('kpModalWrap').style.display='';
 }
 function showLotKP(idx){
@@ -1151,9 +1153,9 @@ function showLotKP(idx){
      <textarea readonly rows="7" style="width:100%;margin-top:8px;font-size:12px" id="kptxt_${i}">${esc(lotKpPlain(i,lot,P[i]))}</textarea>
      <div style="display:flex;gap:8px;margin-top:6px">
        <button onclick="cpKP(${i})" style="border:1px solid var(--line);background:#fff;border-radius:7px;padding:6px 12px;cursor:pointer">Копировать</button>
-       <button onclick="dlLotKP(${i})" style="border:1px solid var(--blue);background:var(--blue);color:#fff;border-radius:7px;padding:6px 12px;cursor:pointer">Скачать .doc</button>
+       <button onclick="dlLotKP(${i})" style="border:1px solid var(--blue);background:var(--blue);color:#fff;border-radius:7px;padding:6px 12px;cursor:pointer">Скачать .docx</button>
      </div></div>`).join('')}
-   <button onclick="dlLotKP('all')" style="border:1px solid var(--blue);background:var(--blue);color:#fff;border-radius:8px;padding:9px 14px;font-weight:600;cursor:pointer;margin-top:6px">Скачать все 3 КП лота одним .doc</button>`;
+   <button onclick="dlLotKP('all')" style="border:1px solid var(--blue);background:var(--blue);color:#fff;border-radius:8px;padding:9px 14px;font-weight:600;cursor:pointer;margin-top:6px">Скачать все 3 КП лота одним .docx</button>`;
   document.getElementById('kpModalWrap').style.display='';
 }
 function genKP(gi,ri){
@@ -1172,8 +1174,20 @@ function closeKP(){document.getElementById('kpModalWrap').style.display='none';}
 function cpKP(i){const t=document.getElementById('kptxt_'+i);if(!t)return;t.select();try{document.execCommand('copy');}catch(e){}
   try{navigator.clipboard&&navigator.clipboard.writeText(t.value);}catch(e){}}
 function _dl(name,bodyHtml){
+  // Если имя файла оканчивается на .docx — генерируем настоящий .docx через html-docx-js
+  const wantDocx=/\.docx$/i.test(name);
+  if(wantDocx && window.htmlDocx && typeof window.htmlDocx.asBlob==='function'){
+    try{
+      const fullHtml='<!DOCTYPE html><html><head><meta charset="utf-8"><style>body{font-family:\'Times New Roman\',serif;font-size:11pt}table{border-collapse:collapse;width:100%}td,th{border:1px solid #999;padding:5px;vertical-align:top}</style></head><body>'+bodyHtml+'</body></html>';
+      const blob=window.htmlDocx.asBlob(fullHtml);
+      const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();a.remove();
+      return;
+    }catch(e){console.warn('[VR2] html-docx-js упал, фоллбэк на .doc:',e);}
+  }
+  // Фоллбэк: HTML+MIME=msword (расширение меняем на .doc если был .docx)
+  const fname=wantDocx?name.replace(/\.docx$/i,'.doc'):name;
   const blob=new Blob(['﻿<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="utf-8"></head><body>'+bodyHtml+'</body></html>'],{type:'application/msword'});
-  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();a.remove();}
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=fname;document.body.appendChild(a);a.click();a.remove();}
 function _kpSafe(name){
   let s=String(name||'');
   // Оставляем только безопасные символы: русские/латинские буквы, цифры, пробел, точку, тире, скобки, запятую.
@@ -1184,8 +1198,8 @@ function _kpSafe(name){
 }
 function _kpFileName(lot,which){
   const t=_kpSafe(lot&&lot.title);
-  if(which==='all')return `КП ${t} (3 шт).doc`;
-  return `КП ${t} N${which+1}.doc`;
+  if(which==='all')return `КП ${t} (3 шт).docx`;
+  return `КП ${t} N${which+1}.docx`;
 }
 function dlLotByIdx(idx){_kpRefresh();_lotIdx=idx;dlLotKP('all');}
 function dlLotKP(which){
@@ -1201,7 +1215,7 @@ function dlAllKP(){
   lots.forEach(lot=>{const P=kpPrices(lot.total);
     body+=`<h3>${esc(lot.title)}</h3>`;
     [0,1,2].forEach(i=>{body+=lotKpHtml(i,lot,P[i])+'<p style="page-break-after:always"></p>';});});
-  _dl('Все_КП_по_лотам.doc',body);
+  _dl('Все_КП_по_лотам.docx',body);
 }
 function smetaTable(num,hideDir){ // num: true → ₽ с разделителями (doc), false → числом (xls); hideDir: скрыть столбец «Напр. № 189»
   const R=dtaxRates();let grand=0,grandReq=0,grandCof=0;
@@ -1227,7 +1241,7 @@ function smetaTable(num,hideDir){ // num: true → ₽ с разделителя
   b+=`<tr><td colspan="7" align="right" style="font-weight:bold">ИТОГО смета (S):</td><td align="right" style="font-weight:bold">${fm(grand)}</td><td colspan="${totRest-3}"></td><td align="right" style="font-weight:bold">${fm(grandReq)}</td><td align="right" style="font-weight:bold">${fm(grandCof)}</td></tr></table>`;
   return b;
 }
-function dlSmetaDoc(){_dl('Детальная_смета.doc','<h2>Детальная смета затрат</h2>'+smetaTable(true,false));}
+function dlSmetaDoc(){_dl('Детальная_смета.docx','<h2>Детальная смета затрат</h2>'+smetaTable(true,false));}
 function dlSmetaXls(){
   const blob=new Blob(['﻿<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="utf-8"><!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>Смета</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]--></head><body>'+smetaTable(false,true)+'</body></html>'],{type:'application/vnd.ms-excel'});
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='Детальная_смета.xls';document.body.appendChild(a);a.click();a.remove();
@@ -1485,7 +1499,7 @@ function smetaTableCmp(num,hideDir){
   b+=`<tr><td colspan="7" align="right" style="font-weight:bold">ИТОГО смета (S):</td><td align="right" style="font-weight:bold">${fm(grand)}</td><td colspan="${totRest-3}"></td><td align="right" style="font-weight:bold">${fm(grandReq)}</td><td align="right" style="font-weight:bold">${fm(grandCof)}</td></tr></table>`;
   return b;
 }
-function dlSmetaCmpDoc(){_dl('Компактная_смета.doc','<h2>Компактная смета затрат (укрупнённая по форматам и блокам)</h2>'+smetaTableCmp(true,false));}
+function dlSmetaCmpDoc(){_dl('Компактная_смета.docx','<h2>Компактная смета затрат (укрупнённая по форматам и блокам)</h2>'+smetaTableCmp(true,false));}
 function dlSmetaCmpXls(){
   const blob=new Blob(['﻿<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="utf-8"><!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>Смета</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]--></head><body>'+smetaTableCmp(false,true)+'</body></html>'],{type:'application/vnd.ms-excel'});
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='Компактная_смета.xls';document.body.appendChild(a);a.click();a.remove();
