@@ -1110,8 +1110,12 @@ function lotKpPlain(si,lot,price){const s=KP_SUP[si], k=lot.total?price/lot.tota
     return `• ${it.name} — ${qty} ${it.unit||'усл.'} × ${mon} мес × ${up.toLocaleString('ru-RU')} ₽ = ${sm.toLocaleString('ru-RU')} ₽`;
   }).join('\n');
   return `${s.n}\nИсх. № [___] от «${D.dd}» ${D.mm} ${D.yyyy} г.\n\nКОММЕРЧЕСКОЕ ПРЕДЛОЖЕНИЕ\nКому: Директору Фонда развития Российского этнографического музея Демешко Ф.Г.\nФонд развития Российского этнографического музея, ОГРН 1217800147070, ИНН 7841096060.\nДля предоставления в Комитет по культуре Санкт-Петербурга.\n\n${s.ph}\nПредмет: ${lot.title}\n\n${ln}\n\nИТОГО: ${Math.round(price).toLocaleString('ru-RU')} ₽\n\n${s.out}\nРуководитель ______________ / [ФИО] / М.П.`;}
-let _lots=[],_lotIdx=0;
+let _lots=[],_lotIdx=0,_kpSrcOpened=null;
+// При входе в модалку фиксируем источник, чтобы клики внутри не «уехали»
+// на другой набор лотов, если параллельно изменился _kpSrc или режим.
+function _kpRefresh(){if(_kpSrcOpened)_kpSrc=_kpSrcOpened;_lots=kpLots();}
 function openKPList(){
+  _kpSrcOpened=_kpSrc||'dtl';
   _lots=kpLots();
   const m=document.getElementById('kpModal');
   if(!_lots.length){m.innerHTML='<p>Нет закупочных строк с суммой > 0. Заполните детальный бюджет.</p><button onclick="closeKP()" style="border:1px solid var(--line);background:#fff;border-radius:8px;padding:6px 12px;cursor:pointer;margin-top:8px">Закрыть</button>';document.getElementById('kpModalWrap').style.display='';return;}
@@ -1129,8 +1133,8 @@ function openKPList(){
   document.getElementById('kpModalWrap').style.display='';
 }
 function showLotKP(idx){
-  if(!_lots.length)_lots=kpLots();
-  _lotIdx=idx; const lot=_lots[idx]; const P=kpPrices(lot.total);
+  _kpRefresh();
+  _lotIdx=idx; const lot=_lots[idx]; if(!lot){alert('Лот не найден. Откройте список заново.');return;} const P=kpPrices(lot.total);
   const m=document.getElementById('kpModal');
   m.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
      <h2 style="margin:0;font-size:16px">3 КП · ${esc(lot.title.slice(0,70))}</h2>
@@ -1171,14 +1175,15 @@ function _kpFileName(lot,which){
   if(which==='all')return `КП ${t} (3 шт).doc`;
   return `КП ${t} №${which+1}.doc`;
 }
-function dlLotByIdx(idx){if(!_lots.length)_lots=kpLots();_lotIdx=idx;dlLotKP('all');}
+function dlLotByIdx(idx){_kpRefresh();_lotIdx=idx;dlLotKP('all');}
 function dlLotKP(which){
   const lot=_lots[_lotIdx];if(!lot)return;const P=kpPrices(lot.total);
   if(which==='all'){let b='';[0,1,2].forEach(i=>{b+=lotKpHtml(i,lot,P[i])+'<p style="page-break-after:always"></p>';});_dl(_kpFileName(lot,'all'),b);return;}
   _dl(_kpFileName(lot,which),lotKpHtml(which,lot,P[which]));
 }
 function dlAllKP(){
-  const lots=kpLots();
+  _kpRefresh();
+  const lots=_lots;
   if(!lots.length){alert('Нет закупочных строк с суммой > 0.');return;}
   let body='<h2>Коммерческие предложения (мониторинг цен, п. 8.3 № 189)</h2>';
   lots.forEach(lot=>{const P=kpPrices(lot.total);
