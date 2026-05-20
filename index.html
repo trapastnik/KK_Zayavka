@@ -119,6 +119,11 @@
   table#dtlTable td.stc,table#cmpTable td.stc{min-width:130px;white-space:normal}
   table#dtlTable td.stc .st,table#cmpTable td.stc .st{white-space:normal;line-height:1.35;display:inline-block;max-width:100%}
   table#dtlTable td.dir select,table#cmpTable td.dir select{max-width:200px}
+  /* «Наименование» — на всю ширину столбца, auto-height (без обрезки) */
+  table#dtlTable td.desc,table#cmpTable td.desc{min-width:280px;width:34%}
+  table#dtlTable td.desc textarea,table#cmpTable td.desc textarea{width:100%;box-sizing:border-box;
+    border:1px solid var(--line);border-radius:7px;padding:6px 8px;font:inherit;font-size:12.5px;
+    line-height:1.4;resize:vertical;overflow:hidden}
   tr.macro .mtog{cursor:pointer;user-select:none}
   tr.macro .msum{float:right;font-weight:700}
   .sm-card{background:var(--panel);border:1px solid var(--line);border-radius:14px;
@@ -878,6 +883,14 @@ function dtaxRates(){
   return{gph:0.30,staff:0.302,ip:0,n:'общий 30% + 0,2%'};
 }
 const TKN={gph:'ГПХ',staff:'штат',ip:'ИП'};
+function autoSizeTA(el){if(!el)return;el.style.height='auto';el.style.height=(el.scrollHeight+2)+'px';}
+function autoSizeAllTA(rootId){
+  const root=document.getElementById(rootId);if(!root)return;
+  root.querySelectorAll('td.desc textarea').forEach(t=>{
+    autoSizeTA(t);
+    if(!t.dataset.autosize){t.addEventListener('input',()=>autoSizeTA(t));t.dataset.autosize='1';}
+  });
+}
 function dirLabel(n){const L=LIM23.find(x=>x.n===n);return L?('п.'+n+' ≤'+(L.f*100).toFixed(0)+'% — '+L.s):('п.'+n);}
 function rmon(r){return r.mon==null?1:(+r.mon||0);}
 function remp(r){return r.emp==null?1:(+r.emp||0)/100;}
@@ -901,7 +914,7 @@ function renderDetail(){
       const kp=(LIM23.find(x=>x.n===r.dir)||{}).k;
       h+=`<tr id="dtr_${gi}_${ri}">
         <td class="r" style="font-weight:700;color:var(--mut)">${gi+1}.${ri+1}</td>
-        <td class="desc"><textarea id="dn_${gi}_${ri}" rows="3" style="width:230px">${esc(r.name||'')}</textarea></td>
+        <td class="desc"><textarea id="dn_${gi}_${ri}">${esc(r.name||'')}</textarea></td>
         <td class="r"><input type="text" id="du_${gi}_${ri}" value="${(r.unit||'').replace(/"/g,'&quot;')}" style="width:74px"></td>
         <td class="r"><input type="text" inputmode="numeric" id="dq_${gi}_${ri}" value="${(r.qty||0).toLocaleString('ru-RU')}" style="width:62px"></td>
         <td class="r"><input type="text" inputmode="numeric" id="dm_${gi}_${ri}" value="${rmon(r)}" style="width:46px" title="кол-во месяцев"></td>
@@ -931,6 +944,7 @@ function renderDetail(){
     if(df)df.addEventListener('change',()=>{r.tf=df.value;recalc();});
   }));
   document.querySelectorAll('input[name="dtax"]').forEach(x=>x.addEventListener('change',recalc));
+  autoSizeAllTA('dtlTable');
 }
 function addDtl(gi){dtl[gi].rows.push({name:'Новая статья',unit:'усл.',qty:1,rate:0,mon:1,dir:1,tf:''});renderDetail();recalc();}
 function delDtl(gi,ri){_delStack.push({gi,ri,row:JSON.parse(JSON.stringify(dtl[gi].rows[ri]))});dtl[gi].rows.splice(ri,1);renderDetail();recalc();}
@@ -1197,7 +1211,8 @@ function showTab(name){
     if(v)v.style.display=(k===name)?'':'none';
     if(b)b.classList.toggle('active',k===name);
   });
-  if(name==='detail'||name==='compact')setTimeout(syncStick,0);
+  if(name==='detail')setTimeout(()=>{autoSizeAllTA('dtlTable');syncStick();},0);
+  else if(name==='compact')setTimeout(()=>{autoSizeAllTA('cmpTable');syncStick();},0);
 }
 
 /* ===== КОМПАКТНЫЙ БЮДЖЕТ — структура согласована с фондом (10 блоков) ===== */
@@ -1288,7 +1303,7 @@ function renderCompact(){
       const kp=(LIM23.find(x=>x.n===r.dir)||{}).k;
       h+=`<tr id="ctr_${gi}_${ri}">
         <td class="r" style="font-weight:700;color:var(--mut)">${gi+1}.${ri+1}</td>
-        <td class="desc"><textarea id="cn_${gi}_${ri}" rows="3" style="width:230px">${esc(r.name||'')}</textarea></td>
+        <td class="desc"><textarea id="cn_${gi}_${ri}">${esc(r.name||'')}</textarea></td>
         <td class="r"><input type="text" id="cu_${gi}_${ri}" value="${(r.unit||'').replace(/"/g,'&quot;')}" style="width:74px"></td>
         <td class="r"><input type="text" inputmode="numeric" id="cq_${gi}_${ri}" value="${(r.qty||0).toLocaleString('ru-RU')}" style="width:62px"></td>
         <td class="r"><input type="text" inputmode="numeric" id="cmo_${gi}_${ri}" value="${rmon(r)}" style="width:46px" title="кол-во месяцев"></td>
@@ -1318,6 +1333,7 @@ function renderCompact(){
     if(df)df.addEventListener('change',()=>{r.tf=df.value;recalc();});
   }));
   document.querySelectorAll('input[name="ctax"]').forEach(x=>x.addEventListener('change',recalc));
+  autoSizeAllTA('cmpTable');
 }
 function recalcCompact(){
   const R=ctaxRates();let grand=0;const byDir={};
