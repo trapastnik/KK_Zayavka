@@ -939,7 +939,7 @@ function renderDetail(){
         <td class="stc" id="dst_${gi}_${ri}">—</td>
         <td style="white-space:nowrap">${kp?`<button type="button" onclick="genKP(${gi},${ri})" style="border:1px solid var(--blue);background:var(--blue-soft);color:var(--blue);border-radius:6px;padding:3px 9px;font-size:11px;font-weight:700;cursor:pointer">КП</button> `:''}<button type="button" onclick="delDtl(${gi},${ri})" title="удалить" style="border:1px solid var(--line);background:#fff;border-radius:6px;padding:3px 8px;font-size:11px;cursor:pointer;color:var(--red)">✕</button></td></tr>`;
     });
-    h+=`<tr><td class="r" style="color:var(--mut)">${gi+1}.в</td><td colspan="6" style="color:var(--mut)">Страховые взносы по блоку (по форме строк) — <span id="dtrate_${gi}"></span></td><td class="r" id="dtaxb_${gi}" style="font-weight:700">—</td><td colspan="4"></td></tr>`;
+    h+=`<tr><td class="r" style="color:var(--mut)">${gi+1}.${G.rows.length+1}</td><td colspan="6" style="color:var(--mut)">Страховые взносы по блоку (по форме строк) — <span id="dtrate_${gi}"></span></td><td class="r" id="dtaxb_${gi}" style="font-weight:700">—</td><td colspan="4"></td></tr>`;
     h+=`<tr><td></td><td colspan="11"><button type="button" onclick="addDtl(${gi})" style="border:1px dashed #94a3b8;background:#fff;border-radius:7px;padding:5px 12px;font-size:12px;cursor:pointer;color:#475569">+ добавить строку в Блок ${gi+1}</button> <span style="color:var(--mut);font-size:12px">подытог блока: <b id="dsub_${gi}">—</b></span></td></tr>`;
   });
   h+=`<tr class="tot"><td></td><td>ИТОГО смета (S)</td><td></td><td></td><td></td><td></td><td></td><td class="r" id="dGrand">—</td><td colspan="4"></td></tr>`;
@@ -1221,7 +1221,7 @@ function smetaTable(num,hideDir){ // num: true → ₽ с разделителя
       const cof=Math.min(Math.max(0,+r.cof||0),s), req=Math.max(0,s-cof);
       subReq+=req; subCof+=cof;
       b+=`<tr>${idCell(`${gi+1}.${ri+1}`)}<td>${esc(r.name)}</td><td align="center">${esc(r.unit||'')}</td><td align="center">${r.qty}</td><td align="center">${rmon(r)}</td><td align="center">${r.emp==null?100:r.emp}%</td><td align="right">${fm(r.rate)}</td><td align="right">${fm(s)}</td>${hideDir?'':`<td>${esc(dirLabel(r.dir))}</td>`}<td>${esc(fl)}</td><td align="right">${fm(req)}</td><td align="right">${fm(cof)}</td></tr>`;});
-    if(bTax>0){subReq+=bTax;b+=`<tr><td></td><td colspan="6">Страховые взносы по блоку (${R.n})</td><td align="right">${fm(bTax)}</td><td colspan="${taxRest-2}"></td><td align="right">${fm(bTax)}</td><td align="right">0</td></tr>`;}
+    if(bTax>0){subReq+=bTax;b+=`<tr>${idCell(`${gi+1}.${G.rows.length+1}`)}<td colspan="5">Страховые взносы по блоку (${R.n})</td><td align="right">${fm(bTax)}</td><td colspan="${taxRest-2}"></td><td align="right">${fm(bTax)}</td><td align="right">0</td></tr>`;}
     sub+=bTax;grand+=sub;grandReq+=subReq;grandCof+=subCof;
     b+=`<tr><td colspan="7" align="right" style="font-weight:bold">Подытог Блока ${gi+1}:</td><td align="right" style="font-weight:bold">${fm(sub)}</td><td colspan="${totRest-3}"></td><td align="right" style="font-weight:bold">${fm(subReq)}</td><td align="right" style="font-weight:bold">${fm(subCof)}</td></tr>`;});
   b+=`<tr><td colspan="7" align="right" style="font-weight:bold">ИТОГО смета (S):</td><td align="right" style="font-weight:bold">${fm(grand)}</td><td colspan="${totRest-3}"></td><td align="right" style="font-weight:bold">${fm(grandReq)}</td><td align="right" style="font-weight:bold">${fm(grandCof)}</td></tr></table>`;
@@ -1373,7 +1373,7 @@ function renderCompact(){
         <td class="stc" id="cst_${gi}_${ri}">—</td>
         <td style="white-space:nowrap">${kp?`<button type="button" onclick="genKpCmp(${gi},${ri})" style="border:1px solid var(--blue);background:var(--blue-soft);color:var(--blue);border-radius:6px;padding:3px 9px;font-size:11px;font-weight:700;cursor:pointer">КП</button> `:''}<button type="button" onclick="delCmp(${gi},${ri})" title="удалить" style="border:1px solid var(--line);background:#fff;border-radius:6px;padding:3px 8px;font-size:11px;cursor:pointer;color:var(--red)">✕</button></td></tr>`;
     });
-    h+=`<tr><td class="r" style="color:var(--mut)">${gi+1}.в</td><td colspan="6" style="color:var(--mut)">Страховые взносы по блоку (по форме строк) — <span id="ctrate_${gi}"></span></td><td class="r" id="ctaxb_${gi}" style="font-weight:700">—</td><td colspan="4"></td></tr>`;
+    h+=`<tr><td class="r" style="color:var(--mut)">${gi+1}.${G.rows.length+1}</td><td colspan="6" style="color:var(--mut)">Страховые взносы по блоку (по форме строк) — <span id="ctrate_${gi}"></span></td><td class="r" id="ctaxb_${gi}" style="font-weight:700">—</td><td colspan="4"></td></tr>`;
     h+=`<tr><td></td><td colspan="11"><button type="button" onclick="addCmp(${gi})" style="border:1px dashed #94a3b8;background:#fff;border-radius:7px;padding:5px 12px;font-size:12px;cursor:pointer;color:#475569">+ добавить строку в Блок ${gi+1}</button> <span style="color:var(--mut);font-size:12px">подытог блока: <b id="csub_${gi}">—</b></span></td></tr>`;
   });
   h+=`<tr class="tot"><td></td><td>ИТОГО смета (S)</td><td></td><td></td><td></td><td></td><td></td><td class="r" id="cGrand">—</td><td colspan="4"></td></tr>`;
@@ -1479,7 +1479,7 @@ function smetaTableCmp(num,hideDir){
       const cof=Math.min(Math.max(0,+r.cof||0),s), req=Math.max(0,s-cof);
       subReq+=req; subCof+=cof;
       b+=`<tr>${idCell(`${gi+1}.${ri+1}`)}<td>${esc(r.name)}</td><td align="center">${esc(r.unit||'')}</td><td align="center">${r.qty}</td><td align="center">${rmon(r)}</td><td align="center">${r.emp==null?100:r.emp}%</td><td align="right">${fm(r.rate)}</td><td align="right">${fm(s)}</td>${hideDir?'':`<td>${esc(dirLabel(r.dir))}</td>`}<td>${esc(fl)}</td><td align="right">${fm(req)}</td><td align="right">${fm(cof)}</td></tr>`;});
-    if(bTax>0){subReq+=bTax;b+=`<tr><td></td><td colspan="6">Страховые взносы по блоку (${R.n})</td><td align="right">${fm(bTax)}</td><td colspan="${taxRest-2}"></td><td align="right">${fm(bTax)}</td><td align="right">0</td></tr>`;}
+    if(bTax>0){subReq+=bTax;b+=`<tr>${idCell(`${gi+1}.${G.rows.length+1}`)}<td colspan="5">Страховые взносы по блоку (${R.n})</td><td align="right">${fm(bTax)}</td><td colspan="${taxRest-2}"></td><td align="right">${fm(bTax)}</td><td align="right">0</td></tr>`;}
     sub+=bTax;grand+=sub;grandReq+=subReq;grandCof+=subCof;
     b+=`<tr><td colspan="7" align="right" style="font-weight:bold">Подытог Блока ${gi+1}:</td><td align="right" style="font-weight:bold">${fm(sub)}</td><td colspan="${totRest-3}"></td><td align="right" style="font-weight:bold">${fm(subReq)}</td><td align="right" style="font-weight:bold">${fm(subCof)}</td></tr>`;});
   b+=`<tr><td colspan="7" align="right" style="font-weight:bold">ИТОГО смета (S):</td><td align="right" style="font-weight:bold">${fm(grand)}</td><td colspan="${totRest-3}"></td><td align="right" style="font-weight:bold">${fm(grandReq)}</td><td align="right" style="font-weight:bold">${fm(grandCof)}</td></tr></table>`;
