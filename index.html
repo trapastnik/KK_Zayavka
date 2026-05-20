@@ -158,7 +158,6 @@
   .st.warn{background:var(--amber-soft);color:var(--amber)}
   .st.bad{background:var(--red-soft);color:var(--red)}
   .sm-out{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:6px}
-  #compactView .sm-out{grid-template-columns:repeat(6,1fr)}
   .sm-out .box{background:#f8fafc;border:1px solid var(--line);border-radius:10px;
     padding:13px;text-align:center}
   .sm-out .box .v{font-size:20px;font-weight:800}
@@ -349,8 +348,6 @@
     <div class="dstick" id="cStick">
       <div class="sm-out" style="margin:0 0 10px">
         <div class="box hl"><div class="v" id="cTot">0 ₽</div><div class="k">Итого смета (S)</div></div>
-        <div class="box"><div class="v" id="cTotReq" style="color:var(--green)">0 ₽</div><div class="k">Запрос (субсидия)</div></div>
-        <div class="box"><div class="v" id="cTotCof">0 ₽</div><div class="k">Софинансирование</div></div>
         <div class="box"><div class="v" id="cElig">0 ₽</div><div class="k">S<sub>годная</sub> (в лимитах № 189)</div></div>
         <div class="box"><div class="v" id="cOver">0</div><div class="k">направлений с превышением</div></div>
         <div class="box"><div class="v" id="cVcalc">0 ₽</div><div class="k">V<sub>расчёт</sub> = S<sub>годная</sub> × балл / 100</div></div>
@@ -1275,13 +1272,13 @@ function showTab(name){
 }
 
 /* ===== КОМПАКТНЫЙ БЮДЖЕТ — структура согласована с фондом (10 блоков) ===== */
-const CMP_VER=4;
+const CMP_VER=3;
 const CMP_DEF=[
- {g:'1. Организация и проведение культурно-просветительских мероприятий', macro:'1. Организация и проведение мероприятий', rows:[
+ {g:'1. Аренда территорий, помещений, сценических площадок; техническое обеспечение проведения мероприятий', macro:'1. Аренда площадок и техническое обеспечение', rows:[
    {name:'Аренда площадок у 6 библиотек — включает предоставление линейного персонала (ВР-консультанты на точках) силами библиотеки. Услуга библиотеки по п.1, страховые взносы НКО не несёт.',unit:'точка',qty:6,rate:62500,mon:4,dir:1,tf:''},
    {name:'Художественно-декорационное оформление иммерсивных VR-зон',unit:'точка',qty:6,rate:85000,mon:1,dir:3,tf:''},
    {name:'Онлайн-трансляции и художественные видеоверсии мероприятия для интернет-показа',unit:'усл.',qty:1,rate:600000,mon:1,dir:6,tf:''},
-   {name:'Техническое обеспечение, в т.ч. санитарно-гигиеническое обеспечение и уборка точек, дежурство',unit:'точка',qty:6,rate:13000,mon:4,dir:18,tf:''}]},
+   {name:'Санитарно-гигиеническое обеспечение и уборка точек, дежурство',unit:'точка',qty:6,rate:13000,mon:4,dir:18,tf:''}]},
  {g:'2. Аренда VR-оборудования с лицензионной медиатекой', macro:'2. Аренда VR-оборудования', rows:[
    {name:'Аренда камеры/риг 360° для съёмок VR-контента',unit:'съём. день',qty:15,rate:60000,mon:1,dir:4,tf:''},
    {name:'Аренда VR-комплекта (единый договор аренды/услуг технологического партнёра): 35 шлемов Pico 4 + комплекты управления + уникальное ПО управления парком и сценариями + лицензионная медиатека ~39 ед. + пуско-наладка, обучение, техсопровождение. Бандл — п.4, медиатека в составе аренды, не выделяется в п.20.',unit:'договор/мес',qty:1,rate:875000,mon:4,dir:4,tf:''}]},
@@ -1302,22 +1299,22 @@ const CMP_DEF=[
    {name:'Печатная/полиграфическая продукция (афиши, флаеры, буклеты, QR)',unit:'усл.',qty:1,rate:160000,mon:1,dir:13,tf:''},
    {name:'Контекстная/таргетированная реклама в сети «Интернет» (помесячно)',unit:'кампания',qty:1,rate:100000,mon:4,dir:14,tf:''},
    {name:'Посевы у блогеров/лидеров мнений',unit:'публ.',qty:8,rate:25000,mon:1,dir:14,tf:''}]},
- {g:'8. Расходные материалы (до 5% — применимо, проект включает мастер-классы хора Капеллы и ИКП). Расходные материалы для проведения мероприятий и мастер-классов.', macro:'8. Расходные материалы', rows:[
+ {g:'8. Расходные материалы (до 5% — применимо, проект включает мастер-классы хора Капеллы и ИКП)', macro:'8. Расходные материалы', rows:[
    {name:'Расходные материалы (гигиена оптики шлемов, канцелярия, мелкий инвентарь для мастер-классов)',unit:'усл.',qty:1,rate:140000,mon:1,dir:19,tf:''}]},
  {g:'9. Оплата труда штатных работников получателя субсидии за период мероприятия (страховые взносы 30,2%; НДФЛ 13% удерживается из оплаты труда)', macro:'9. Штат НКО', rows:[
    {name:'Директор НКО (часть занятости по мероприятию, 25%)',unit:'чел',qty:1,rate:50000,mon:4,emp:25,dir:21,tf:'staff'}]},
- {g:'10. Оплата работ (услуг) и гонораров творческим работникам, творческим коллективам, специалистам, привлекаемым к реализации творческого проекта', macro:'10. Оплата работ и гонораров (ИП/самозанятые)', rows:[
-   {name:'Режиссёрско-постановочная работа — БОЛЬШОЙ формат (3 фильма: оркестр Капеллы, орган с интерактивом регистров) — самозанятый/ИП',unit:'фильм',qty:3,rate:110000,mon:1,dir:11,tf:'ip'},
-   {name:'Режиссёрско-постановочная работа — СРЕДНИЙ формат (5 фильмов: хор Капеллы, мастер-класс ИКП, отчётный концерт) — самозанятый/ИП',unit:'фильм',qty:5,rate:60000,mon:1,dir:11,tf:'ip'},
-   {name:'Режиссёрско-постановочная работа — МАЛЫЙ формат (7 фильмов: экскурсии по Капелле/Маяковке, «Кулисы») — самозанятый/ИП',unit:'фильм',qty:7,rate:30000,mon:1,dir:11,tf:'ip'},
-   {name:'Гонорары артистов и творческих специалистов — БОЛЬШОЙ формат (3 фильма) — самозанятые/ИП',unit:'фильм',qty:3,rate:130000,mon:1,dir:8,tf:'ip'},
-   {name:'Гонорары артистов и творческих специалистов — СРЕДНИЙ формат (5 фильмов) — самозанятые/ИП',unit:'фильм',qty:5,rate:60000,mon:1,dir:8,tf:'ip'},
-   {name:'Гонорары ведущих/творческих специалистов — МАЛЫЙ формат (7 фильмов) — самозанятые/ИП',unit:'фильм',qty:7,rate:20000,mon:1,dir:8,tf:'ip'},
-   {name:'Куратор VR-десанта — самозанятый/ИП',unit:'чел',qty:1,rate:50000,mon:4,dir:11,tf:'ip'},
-   {name:'Координатор по партнёрам и площадкам — самозанятый/ИП',unit:'чел',qty:1,rate:40000,mon:4,dir:11,tf:'ip'},
-   {name:'Кураторы-медиаторы точек показа (творческое сопровождение, 6 точек) — самозанятые/ИП',unit:'чел',qty:6,rate:40000,mon:4,dir:11,tf:'ip'},
-   {name:'Бухгалтер проекта (учёт целевого расходования субсидии) — самозанятый/ИП за штатом НКО',unit:'чел',qty:1,rate:30000,mon:4,emp:25,dir:12,tf:'ip'},
-   {name:'Продакшн-директор проекта — самозанятый/ИП за штатом НКО',unit:'чел',qty:1,rate:70000,mon:4,emp:25,dir:12,tf:'ip'}]}
+ {g:'10. Оплата работ (услуг) и гонораров творческим работникам, творческим коллективам, специалистам, привлекаемым к реализации творческого проекта', macro:'10. Оплата работ и гонораров (ГПХ)', rows:[
+   {name:'Режиссёрско-постановочная работа — БОЛЬШОЙ формат (3 фильма: оркестр Капеллы, орган с интерактивом регистров)',unit:'фильм',qty:3,rate:110000,mon:1,dir:11,tf:'gph'},
+   {name:'Режиссёрско-постановочная работа — СРЕДНИЙ формат (5 фильмов: хор Капеллы, мастер-класс ИКП, отчётный концерт)',unit:'фильм',qty:5,rate:60000,mon:1,dir:11,tf:'gph'},
+   {name:'Режиссёрско-постановочная работа — МАЛЫЙ формат (7 фильмов: экскурсии по Капелле/Маяковке, «Кулисы»)',unit:'фильм',qty:7,rate:30000,mon:1,dir:11,tf:'gph'},
+   {name:'Гонорары артистов и творческих специалистов — БОЛЬШОЙ формат (3 фильма)',unit:'фильм',qty:3,rate:130000,mon:1,dir:8,tf:'gph'},
+   {name:'Гонорары артистов и творческих специалистов — СРЕДНИЙ формат (5 фильмов)',unit:'фильм',qty:5,rate:60000,mon:1,dir:8,tf:'gph'},
+   {name:'Гонорары ведущих/творческих специалистов — МАЛЫЙ формат (7 фильмов)',unit:'фильм',qty:7,rate:20000,mon:1,dir:8,tf:'gph'},
+   {name:'Куратор VR-десанта',unit:'чел',qty:1,rate:50000,mon:4,dir:11,tf:'gph'},
+   {name:'Координатор по партнёрам и площадкам',unit:'чел',qty:1,rate:40000,mon:4,dir:11,tf:'gph'},
+   {name:'Кураторы-медиаторы точек показа (творческое сопровождение, 6 точек)',unit:'чел',qty:6,rate:40000,mon:4,dir:11,tf:'gph'},
+   {name:'Бухгалтер проекта (учёт целевого расходования субсидии) — за штатом НКО, по договору ГПХ',unit:'чел',qty:1,rate:30000,mon:4,emp:25,dir:12,tf:'gph'},
+   {name:'Руководитель проекта — за штатом НКО, по договору ГПХ',unit:'чел',qty:1,rate:70000,mon:4,emp:25,dir:12,tf:'gph'}]}
 ];
 let cmp=JSON.parse(JSON.stringify(CMP_DEF));
 let _delStackCmp=[];
@@ -1344,25 +1341,18 @@ function resetCmp(){
   cmp=JSON.parse(JSON.stringify(CMP_DEF));_delStackCmp=[];macroColCmp=new Set();
   renderCompact();recalc();
 }
-function _rcof(r){return Math.max(0,+r.cof||0);}
-function _rreq(r){const s=rsum(r);const c=Math.min(_rcof(r),s);return Math.max(0,s-c);}
-function _hasIns(G){return G.rows.some(r=>r.tf==='gph'||r.tf==='staff');}
 function renderCompact(){
   const el=document.getElementById('cmpTable');if(!el)return;
-  // Колонок теперь 14 (добавлены «Запрос, ₽» и «Софинан, ₽» после «Сумма, ₽»)
-  const NCOLS=14;
   let h='<tr class="hdr"><th class="r" style="width:42px">№</th><th>Наименование</th><th class="r">Ед.</th><th class="r">Кол-во</th>'+
-    '<th class="r">Мес</th><th class="r">Занятость&nbsp;%</th><th class="r">Ставка, ₽</th><th class="r">Сумма, ₽</th>'+
-    '<th class="r">Запрос, ₽</th><th class="r">Софинан, ₽</th>'+
-    '<th>Напр. № 189</th><th>Подрядчики</th><th>Статус (лимит)</th><th>Действия</th></tr>';
+    '<th class="r">Мес</th><th class="r">Занятость&nbsp;%</th><th class="r">Ставка, ₽</th><th class="r">Сумма, ₽</th><th>Напр. № 189</th><th>Форма</th><th>Статус (лимит)</th><th>Действия</th></tr>';
   const MAC=[...new Set(cmp.map(b=>b.macro||'—'))];
   let curM=null;
   cmp.forEach((G,gi)=>{
     const mc=G.macro||'—';
     if(mc!==curM){curM=mc;const mi=MAC.indexOf(mc),col=macroColCmp.has(mc);
-      h+=`<tr class="macro"><td colspan="${NCOLS}"><span class="mtog" onclick="toggleMacroCmp(${mi})">${col?'▸':'▾'} Макроблок: ${esc(mc)}</span><span class="msum" id="cmac_${mi}">—</span></td></tr>`;}
+      h+=`<tr class="macro"><td colspan="12"><span class="mtog" onclick="toggleMacroCmp(${mi})">${col?'▸':'▾'} Макроблок: ${esc(mc)}</span><span class="msum" id="cmac_${mi}">—</span></td></tr>`;}
     if(macroColCmp.has(mc))return;
-    h+=`<tr class="tot"><td colspan="${NCOLS}">Блок ${gi+1}. ${G.g}</td></tr>`;
+    h+=`<tr class="tot"><td colspan="12">Блок ${gi+1}. ${G.g}</td></tr>`;
     G.rows.forEach((r,ri)=>{
       const dirOpts=LIM23.map(L=>`<option value="${L.n}"${L.n===r.dir?' selected':''}>${dirLabel(L.n)}</option>`).join('');
       const fOpts=FORMS.map(x=>`<option value="${x[0]}"${(r.tf||'')===x[0]?' selected':''}>${x[1]}</option>`).join('');
@@ -1376,20 +1366,15 @@ function renderCompact(){
         <td class="r"><input type="text" inputmode="numeric" id="ce_${gi}_${ri}" value="${(r.emp==null?100:r.emp)}" style="width:52px" title="занятость, %"></td>
         <td class="r"><input type="text" inputmode="numeric" id="cr_${gi}_${ri}" value="${(Math.round(r.rate)||0).toLocaleString('ru-RU')}" style="width:100px"></td>
         <td class="r" id="cs_${gi}_${ri}" style="font-weight:700">—</td>
-        <td class="r" id="creq_${gi}_${ri}" style="font-weight:700;color:var(--green)">—</td>
-        <td class="r"><input type="text" inputmode="numeric" id="ccof_${gi}_${ri}" value="${(Math.round(_rcof(r))||0).toLocaleString('ru-RU')}" style="width:100px" title="собственные средства (софинансирование)"></td>
         <td class="dir"><select id="cd_${gi}_${ri}" style="width:218px;max-width:218px">${dirOpts}</select></td>
         <td><select id="cf_${gi}_${ri}" style="width:150px">${fOpts}</select></td>
         <td class="stc" id="cst_${gi}_${ri}">—</td>
         <td style="white-space:nowrap">${kp?`<button type="button" onclick="genKpCmp(${gi},${ri})" style="border:1px solid var(--blue);background:var(--blue-soft);color:var(--blue);border-radius:6px;padding:3px 9px;font-size:11px;font-weight:700;cursor:pointer">КП</button> `:''}<button type="button" onclick="delCmp(${gi},${ri})" title="удалить" style="border:1px solid var(--line);background:#fff;border-radius:6px;padding:3px 8px;font-size:11px;cursor:pointer;color:var(--red)">✕</button></td></tr>`;
     });
-    // Строка страховых взносов — нумерация N.${rows.length+1}, отображается только если есть ГПХ/штат-строки в блоке
-    if(_hasIns(G)){
-      h+=`<tr id="ctaxRow_${gi}"><td class="r" style="color:var(--mut)">${gi+1}.${G.rows.length+1}</td><td colspan="6" style="color:var(--mut)">Страховые взносы по блоку (по форме строк) — <span id="ctrate_${gi}"></span></td><td class="r" id="ctaxb_${gi}" style="font-weight:700">—</td><td colspan="6"></td></tr>`;
-    }
-    h+=`<tr><td></td><td colspan="${NCOLS-1}"><button type="button" onclick="addCmp(${gi})" style="border:1px dashed #94a3b8;background:#fff;border-radius:7px;padding:5px 12px;font-size:12px;cursor:pointer;color:#475569">+ добавить строку в Блок ${gi+1}</button> <span style="color:var(--mut);font-size:12px">подытог блока: <b id="csub_${gi}">—</b> · запрос: <b id="csubReq_${gi}" style="color:var(--green)">—</b> · софинан: <b id="csubCof_${gi}">—</b></span></td></tr>`;
+    h+=`<tr><td class="r" style="color:var(--mut)">${gi+1}.в</td><td colspan="6" style="color:var(--mut)">Страховые взносы по блоку (по форме строк) — <span id="ctrate_${gi}"></span></td><td class="r" id="ctaxb_${gi}" style="font-weight:700">—</td><td colspan="4"></td></tr>`;
+    h+=`<tr><td></td><td colspan="11"><button type="button" onclick="addCmp(${gi})" style="border:1px dashed #94a3b8;background:#fff;border-radius:7px;padding:5px 12px;font-size:12px;cursor:pointer;color:#475569">+ добавить строку в Блок ${gi+1}</button> <span style="color:var(--mut);font-size:12px">подытог блока: <b id="csub_${gi}">—</b></span></td></tr>`;
   });
-  h+=`<tr class="tot"><td></td><td>ИТОГО смета (S)</td><td></td><td></td><td></td><td></td><td></td><td class="r" id="cGrand">—</td><td class="r" id="cGrandReq" style="color:var(--green)">—</td><td class="r" id="cGrandCof">—</td><td colspan="4"></td></tr>`;
+  h+=`<tr class="tot"><td></td><td>ИТОГО смета (S)</td><td></td><td></td><td></td><td></td><td></td><td class="r" id="cGrand">—</td><td colspan="4"></td></tr>`;
   el.className='sm';el.innerHTML=h;
   cmp.forEach((G,gi)=>G.rows.forEach((r,ri)=>{
     const bind=(id,prop,numeric)=>{const e=document.getElementById(id+'_'+gi+'_'+ri);if(!e)return;
@@ -1397,39 +1382,34 @@ function renderCompact(){
         if(numeric){r[prop]=+(e.value.replace(/\D/g,''))||0;e.value=(r[prop]).toLocaleString('ru-RU');}
         else r[prop]=e.value;
         recalc();});};
-    bind('cn','name',false);bind('cu','unit',false);bind('cq','qty',true);bind('cmo','mon',true);bind('ce','emp',true);bind('cr','rate',true);bind('ccof','cof',true);
+    bind('cn','name',false);bind('cu','unit',false);bind('cq','qty',true);bind('cmo','mon',true);bind('ce','emp',true);bind('cr','rate',true);
     const dd=document.getElementById('cd_'+gi+'_'+ri);
     if(dd)dd.addEventListener('change',()=>{r.dir=+dd.value;renderCompact();recalc();});
     const df=document.getElementById('cf_'+gi+'_'+ri);
-    if(df)df.addEventListener('change',()=>{r.tf=df.value;renderCompact();recalc();});
+    if(df)df.addEventListener('change',()=>{r.tf=df.value;recalc();});
   }));
   document.querySelectorAll('input[name="ctax"]').forEach(x=>x.addEventListener('change',recalc));
   autoSizeAllTA('cmpTable');
 }
 function recalcCompact(){
-  const R=ctaxRates();let grand=0,grandReq=0,grandCof=0;const byDir={};
+  const R=ctaxRates();let grand=0;const byDir={};
   const MAC=[...new Set(cmp.map(b=>b.macro||'—'))];const macT={};
   cmp.forEach((G,gi)=>{
-    let sub=0,bTax=0,subReq=0,subCof=0;
+    let sub=0,bTax=0;
     G.rows.forEach((r,ri)=>{
       const s=rsum(r);sub+=s;
-      const cof=Math.min(_rcof(r),s), req=Math.max(0,s-cof);
-      subReq+=req; subCof+=cof;
       const se=document.getElementById('cs_'+gi+'_'+ri);if(se)se.textContent=fmtRub(s);
-      const re=document.getElementById('creq_'+gi+'_'+ri);if(re)re.textContent=fmtRub(req);
       byDir[r.dir]=(byDir[r.dir]||0)+s;
       const rate=r.tf?(R[r.tf]||0):0, tax=s*rate;
       if(tax>0){byDir[r.dir]=(byDir[r.dir]||0)+tax;bTax+=tax;}
     });
-    sub+=bTax; subReq+=bTax; // взносы — это часть субсидийной части (заказчик платит из субсидии)
+    sub+=bTax;
     const sb=document.getElementById('csub_'+gi);if(sb)sb.textContent=fmtRub(sub);
-    const sbR=document.getElementById('csubReq_'+gi);if(sbR)sbR.textContent=fmtRub(subReq);
-    const sbC=document.getElementById('csubCof_'+gi);if(sbC)sbC.textContent=fmtRub(subCof);
     const tb=document.getElementById('ctaxb_'+gi);if(tb)tb.textContent=fmtRub(bTax);
     const tr=document.getElementById('ctrate_'+gi);
     if(tr)tr.textContent=`ставки: ГПХ ${(R.gph*100).toFixed(1).replace('.',',')}% · штат ${(R.staff*100).toFixed(1).replace('.',',')}% · ИП 0% (${R.n})`;
     const mk=G.macro||'—';macT[mk]=(macT[mk]||0)+sub;
-    grand+=sub; grandReq+=subReq; grandCof+=subCof;
+    grand+=sub;
   });
   MAC.forEach((m,i)=>{const e=document.getElementById('cmac_'+i);
     if(e)e.textContent=fmtRub(macT[m]||0)+(macroColCmp.has(m)?' · свёрнуто':'');});
@@ -1449,8 +1429,7 @@ function recalcCompact(){
     else{st.innerHTML=`<span class="st ok">п.${r.dir}: задел ${fmtRub(cap-sp)}</span>`;if(trEl)trEl.style.background='';}
   }));
   const g=(id,v)=>{const x=document.getElementById(id);if(x)x.textContent=v;};
-  g('cGrand',fmtRub(grand));g('cGrandReq',fmtRub(grandReq));g('cGrandCof',fmtRub(grandCof));
-  g('cTot',fmtRub(grand));g('cTotReq',fmtRub(grandReq));g('cTotCof',fmtRub(grandCof));g('cElig',fmtRub(elig));
+  g('cGrand',fmtRub(grand));g('cTot',fmtRub(grand));g('cElig',fmtRub(elig));
   const ov=document.getElementById('cOver');if(ov){ov.textContent=over;ov.style.color=over?'var(--red)':'var(--green)';}
   let T=parseFloat(document.getElementById('fmThreshold').value);if(isNaN(T))T=0;
   const evalScore=window.__score||0;
