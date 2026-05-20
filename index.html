@@ -319,6 +319,10 @@
   <div style="max-width:900px;margin:0 auto;background:#fff;border-radius:14px;padding:24px" id="kpModal"></div>
 </div>
 
+<div id="cmpBkWrap" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:55;padding:30px;overflow:auto" onclick="if(event.target===this)closeCmpBackups()">
+  <div style="max-width:900px;margin:0 auto;background:#fff;border-radius:14px;padding:24px" id="cmpBkModal"></div>
+</div>
+
 <div id="pinModalWrap" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,.65);z-index:60;padding:30px;overflow:auto" onclick="if(event.target===this)closePinModal()">
   <div style="max-width:360px;margin:120px auto 0;background:#fff;border-radius:14px;padding:24px;box-shadow:0 18px 40px rgba(15,23,42,.25)">
     <h3 style="margin:0 0 6px;font-size:17px">🔒 Доступ к бюджетам</h3>
@@ -374,6 +378,7 @@
       <button style="border:1px solid #15803d;background:#fff;border-radius:9px;padding:9px 14px;font-weight:600;cursor:pointer;color:#15803d" onclick="dlSmetaCmpXls()">Скачать бюджет (Excel)</button>
       <button style="border:1px solid var(--line);background:#fff;border-radius:9px;padding:9px 14px;font-weight:600;cursor:pointer;color:#475569" onclick="undoDelCmp()" title="Вернуть последнюю удалённую строку">↶ Вернуть удалённую строку</button>
       <button style="border:1px solid var(--line);background:#fff;border-radius:9px;padding:9px 14px;font-weight:600;cursor:pointer;color:#475569" onclick="resetCmp()" title="Сбросить компактный бюджет к исходному варианту">↺ Сбросить компактный к исходному</button>
+      <button style="border:1px solid #15803d;background:#f0fdf4;border-radius:9px;padding:9px 14px;font-weight:600;cursor:pointer;color:#15803d" onclick="openCmpBackups()" title="Список авто-снимков (раз в 5 мин) и экспорт в .json">🗄 Резервные копии</button>
     </div>
     <div class="sub" style="margin-top:10px">Базовая сумма S совпадает с «Детальным» (16,3 млн ₽ до взносов). Расхождение по сумме с взносами возможно: в «Компактном» строки производства видеоматериалов оформлены как договор с подрядчиком/юрлицом без начислений — это и есть смысл укрупнения. Бухгалтер и руководитель проекта переведены из штата НКО в ГПХ и попадают под направление № 12 (админ./иные специалисты, ≤5%).</div>
   </div>
@@ -1330,7 +1335,8 @@ function undoDelCmp(){
   renderCompact();recalc();
 }
 function resetCmp(){
-  if(!confirm('Сбросить компактный бюджет к исходному варианту? Изменения, сделанные в этой вкладке, будут потеряны.'))return;
+  if(!confirm('Сбросить компактный бюджет к исходному варианту? Текущее состояние сохранится в снимок «before-reset» (можно восстановить через «🗄 Резервные копии»).'))return;
+  _cmpSnap('before-reset');
   cmp=JSON.parse(JSON.stringify(CMP_DEF));_delStackCmp=[];macroColCmp=new Set();
   renderCompact();recalc();
 }
@@ -1554,23 +1560,92 @@ function save(){
         d.toLocaleTimeString('ru',{hour:'2-digit',minute:'2-digit'});}
   }catch(e){}
 }
-/* Утилита: список бэкапов cmp с возможностью восстановления через консоль.
-   Использование: vr2Backups() — список; vr2Backups.restore('ключ') — восстановить cmp из бэкапа. */
-window.vr2Backups=function(){
+/* ===== Защита данных: snapshot / список бэкапов / восстановление ===== */
+function _cmpSnap(reason){
+  try{
+    if(!Array.isArray(cmp)||!cmp.length)return;
+    const ts=new Date().toISOString().replace(/[:.TZ-]/g,'').slice(0,14);
+    const key='vr2_cmp_backup_v'+CMP_VER+'_'+(reason||'auto')+'_'+ts;
+    localStorage.setItem(key,JSON.stringify({cmp,cmpVer:CMP_VER,savedAt:new Date().toISOString(),reason:reason||'auto'}));
+    _cmpPrune(10);
+  }catch(e){}
+}
+function _cmpPrune(maxKeep){
+  const keys=[];
+  for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&k.startsWith('vr2_cmp_backup_'))keys.push(k);}
+  keys.sort(); // сортировка по строке = по дате (т.к. timestamp в имени)
+  while(keys.length>maxKeep){const k=keys.shift();try{localStorage.removeItem(k);}catch(e){}}
+}
+function _cmpListBackups(){
   const out=[];
   for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&k.startsWith('vr2_cmp_backup_')){
-    try{const v=JSON.parse(localStorage.getItem(k));out.push({key:k,cmpVer:v.cmpVer,savedAt:v.savedAt,rows:(v.cmp||[]).reduce((s,b)=>s+((b.rows||[]).length),0)});}
-    catch(e){out.push({key:k,error:'parse error'});}
+    try{const v=JSON.parse(localStorage.getItem(k));
+      let sum=0;(v.cmp||[]).forEach(b=>(b.rows||[]).forEach(r=>{const q=+r.qty||0,rt=+r.rate||0,mo=r.mon==null?1:+r.mon,em=r.emp==null?1:(+r.emp||0)/100;sum+=q*rt*mo*em;}));
+      out.push({key:k,cmpVer:v.cmpVer,reason:v.reason||'',savedAt:v.savedAt,rows:(v.cmp||[]).reduce((s,b)=>s+((b.rows||[]).length),0),sum:Math.round(sum)});
+    }catch(e){out.push({key:k,error:'parse error'});}
   }}
+  return out.sort((a,b)=>(b.savedAt||'').localeCompare(a.savedAt||''));
+}
+window.vr2Backups=function(){
+  const out=_cmpListBackups();
   if(!out.length)console.log('[VR2] Бэкапов cmp нет.');
   else{console.log('[VR2] Бэкапы cmp (для восстановления: vr2Backups.restore(\"ключ\")):');console.table(out);}
   return out;
 };
 window.vr2Backups.restore=function(key){
   try{const v=JSON.parse(localStorage.getItem(key));if(!v||!Array.isArray(v.cmp))throw new Error('Пустой/повреждённый бэкап');
+    _cmpSnap('before-restore'); // на всякий случай сохраним текущее перед восстановлением
     cmp=v.cmp;renderCompact();recalc();console.log('[VR2] cmp восстановлен из',key,'— строк:',cmp.reduce((s,b)=>s+b.rows.length,0));
   }catch(e){console.error('[VR2] Не удалось восстановить:',e);}
 };
+/* UI-модалка для бэкапов */
+function openCmpBackups(){
+  const list=_cmpListBackups();
+  const w=document.getElementById('cmpBkWrap');const m=document.getElementById('cmpBkModal');
+  let h=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+    <h2 style="margin:0;font-size:17px">🗄 Резервные копии компактного бюджета</h2>
+    <button onclick="closeCmpBackups()" style="border:1px solid var(--line);background:#fff;border-radius:8px;padding:6px 12px;cursor:pointer">Закрыть ✕</button></div>
+    <div class="sub">Авто-снимки сохраняются раз в 5 минут (хранятся 10 последних) + при сбросе и восстановлении. Также есть экспорт/импорт в JSON-файл — самая надёжная защита.</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin:10px 0">
+      <button onclick="_cmpSnap('manual');openCmpBackups()" style="border:1px solid var(--blue);background:var(--blue);color:#fff;border-radius:7px;padding:7px 12px;font-weight:600;cursor:pointer">💾 Сохранить снимок сейчас</button>
+      <button onclick="dlCmpJson()" style="border:1px solid var(--blue);background:#fff;color:var(--blue);border-radius:7px;padding:7px 12px;font-weight:600;cursor:pointer">↓ Скачать JSON (на диск)</button>
+      <label style="border:1px solid var(--line);background:#fff;border-radius:7px;padding:7px 12px;font-weight:600;cursor:pointer;color:#475569">↑ Загрузить из JSON<input type="file" accept=".json,application/json" style="display:none" onchange="loadCmpJson(event)"></label>
+    </div>`;
+  if(!list.length){h+='<p style="color:var(--mut)">Бэкапов пока нет. Снимок сделается автоматически в течение 5 минут или нажми «Сохранить снимок сейчас».</p>';}
+  else{
+    h+='<table border="1" cellspacing="0" cellpadding="6" style="border-collapse:collapse;width:100%;font-size:12.5px"><tr style="background:#f1f5f9"><th>Дата</th><th>Версия</th><th>Причина</th><th>Строк</th><th>Сумма ₽</th><th>Действия</th></tr>';
+    list.forEach(b=>{const d=b.savedAt?new Date(b.savedAt).toLocaleString('ru-RU',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}):'—';
+      h+=`<tr><td>${esc(d)}</td><td align="center">v${b.cmpVer||'?'}</td><td>${esc(b.reason||'')}</td><td align="center">${b.rows||'?'}</td><td align="right">${(b.sum||0).toLocaleString('ru-RU')}</td>
+        <td style="white-space:nowrap">
+          <button onclick="restoreCmpBk('${b.key}')" style="border:1px solid var(--green);background:var(--green-soft);color:var(--green);border-radius:6px;padding:3px 9px;font-size:11px;font-weight:700;cursor:pointer">Восстановить</button>
+          <button onclick="delCmpBk('${b.key}')" title="удалить бэкап" style="border:1px solid var(--line);background:#fff;border-radius:6px;padding:3px 8px;font-size:11px;cursor:pointer;color:var(--red)">✕</button>
+        </td></tr>`;
+    });
+    h+='</table>';
+  }
+  m.innerHTML=h; w.style.display='';
+}
+function closeCmpBackups(){document.getElementById('cmpBkWrap').style.display='none';}
+function restoreCmpBk(key){if(!confirm('Восстановить cmp из бэкапа?\nТекущее состояние будет сохранено в новый снимок «before-restore».'))return; window.vr2Backups.restore(key); closeCmpBackups();}
+function delCmpBk(key){if(!confirm('Удалить этот бэкап? Действие необратимо.'))return; try{localStorage.removeItem(key);}catch(e){} openCmpBackups();}
+function dlCmpJson(){
+  const data={cmp,cmpVer:CMP_VER,exportedAt:new Date().toISOString()};
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='cmp_бэкап_'+new Date().toISOString().slice(0,16).replace(/[:T]/g,'-')+'.json';document.body.appendChild(a);a.click();a.remove();
+}
+function loadCmpJson(ev){
+  const f=ev.target.files&&ev.target.files[0];if(!f)return;
+  const r=new FileReader();
+  r.onload=()=>{try{const d=JSON.parse(r.result);if(!d||!Array.isArray(d.cmp))throw new Error('Нет массива cmp');
+    if(!confirm('Загрузить cmp из файла? Текущее состояние сохранится в снимок.'))return;
+    _cmpSnap('before-import'); cmp=d.cmp; renderCompact(); recalc();
+    alert('Загружено: '+cmp.reduce((s,b)=>s+b.rows.length,0)+' строк.');
+    closeCmpBackups();
+  }catch(e){alert('Не удалось прочитать JSON: '+e.message);}};
+  r.readAsText(f);
+}
+// Авто-снимок раз в 5 минут
+setInterval(()=>_cmpSnap('auto'),5*60*1000);
 function load(){
   let raw;try{raw=localStorage.getItem(LSKEY);}catch(e){return;}
   if(!raw)return;
