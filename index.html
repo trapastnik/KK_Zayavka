@@ -1145,27 +1145,28 @@ function dlAllKP(){
     [0,1,2].forEach(i=>{body+=lotKpHtml(i,lot,P[i])+'<p style="page-break-after:always"></p>';});});
   _dl('Все_КП_по_лотам.doc',body);
 }
-function smetaTable(num){ // num: true → ₽ с разделителями (doc), false → числом (xls)
+function smetaTable(num,hideDir){ // num: true → ₽ с разделителями (doc), false → числом (xls); hideDir: скрыть столбец «Напр. № 189»
   const R=dtaxRates();let grand=0;
   const fm=v=>num?Math.round(v).toLocaleString('ru-RU'):String(Math.round(v));
+  const nCols=hideDir?9:10, taxRest=hideDir?1:2, totRest=hideDir?1:2;
   let b='<table border="1" cellspacing="0" cellpadding="5" style="border-collapse:collapse;width:100%;font-family:\'Times New Roman\'">'+
-    '<tr><th>№</th><th>Наименование</th><th>Ед.</th><th>Кол-во</th><th>Мес</th><th>Занятость %</th><th>Ставка, ₽</th><th>Сумма, ₽</th><th>Напр. № 189</th><th>Форма</th></tr>';
+    '<tr><th>№</th><th>Наименование</th><th>Ед.</th><th>Кол-во</th><th>Мес</th><th>Занятость %</th><th>Ставка, ₽</th><th>Сумма, ₽</th>'+(hideDir?'':'<th>Напр. № 189</th>')+'<th>Форма</th></tr>';
   dtl.forEach((G,gi)=>{
-    b+=`<tr><td colspan="10" style="background:#eef;font-weight:bold">Блок ${gi+1}. ${esc(G.g)}</td></tr>`;
+    b+=`<tr><td colspan="${nCols}" style="background:#eef;font-weight:bold">Блок ${gi+1}. ${esc(G.g)}</td></tr>`;
     let sub=0,bTax=0;
     G.rows.forEach((r,ri)=>{const s=rsum(r);sub+=s;
       const fl=(FORMS.find(x=>x[0]===(r.tf||''))||['',''])[1];
       const rate=r.tf?(R[r.tf]||0):0;bTax+=s*rate;
-      b+=`<tr><td>${gi+1}.${ri+1}</td><td>${esc(r.name)}</td><td align="center">${esc(r.unit||'')}</td><td align="center">${r.qty}</td><td align="center">${rmon(r)}</td><td align="center">${r.emp==null?100:r.emp}%</td><td align="right">${fm(r.rate)}</td><td align="right">${fm(s)}</td><td>${esc(dirLabel(r.dir))}</td><td>${esc(fl)}</td></tr>`;});
-    if(bTax>0)b+=`<tr><td></td><td colspan="6">Страховые взносы по блоку (${R.n})</td><td align="right">${fm(bTax)}</td><td colspan="2"></td></tr>`;
+      b+=`<tr><td>${gi+1}.${ri+1}</td><td>${esc(r.name)}</td><td align="center">${esc(r.unit||'')}</td><td align="center">${r.qty}</td><td align="center">${rmon(r)}</td><td align="center">${r.emp==null?100:r.emp}%</td><td align="right">${fm(r.rate)}</td><td align="right">${fm(s)}</td>${hideDir?'':`<td>${esc(dirLabel(r.dir))}</td>`}<td>${esc(fl)}</td></tr>`;});
+    if(bTax>0)b+=`<tr><td></td><td colspan="6">Страховые взносы по блоку (${R.n})</td><td align="right">${fm(bTax)}</td><td colspan="${taxRest}"></td></tr>`;
     sub+=bTax;grand+=sub;
-    b+=`<tr><td colspan="7" align="right" style="font-weight:bold">Подытог Блока ${gi+1}:</td><td align="right" style="font-weight:bold">${fm(sub)}</td><td colspan="2"></td></tr>`;});
-  b+=`<tr><td colspan="7" align="right" style="font-weight:bold">ИТОГО смета (S):</td><td align="right" style="font-weight:bold">${fm(grand)}</td><td colspan="2"></td></tr></table>`;
+    b+=`<tr><td colspan="7" align="right" style="font-weight:bold">Подытог Блока ${gi+1}:</td><td align="right" style="font-weight:bold">${fm(sub)}</td><td colspan="${totRest}"></td></tr>`;});
+  b+=`<tr><td colspan="7" align="right" style="font-weight:bold">ИТОГО смета (S):</td><td align="right" style="font-weight:bold">${fm(grand)}</td><td colspan="${totRest}"></td></tr></table>`;
   return b;
 }
-function dlSmetaDoc(){_dl('Детальная_смета.doc','<h2>Детальная смета затрат</h2>'+smetaTable(true));}
+function dlSmetaDoc(){_dl('Детальная_смета.doc','<h2>Детальная смета затрат</h2>'+smetaTable(true,false));}
 function dlSmetaXls(){
-  const blob=new Blob(['﻿<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="utf-8"><!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>Смета</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]--></head><body>'+smetaTable(false)+'</body></html>'],{type:'application/vnd.ms-excel'});
+  const blob=new Blob(['﻿<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="utf-8"><!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>Смета</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]--></head><body>'+smetaTable(false,true)+'</body></html>'],{type:'application/vnd.ms-excel'});
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='Детальная_смета.xls';document.body.appendChild(a);a.click();a.remove();
 }
 /* ===== Пин-код на бюджетные вкладки ===== */
@@ -1403,27 +1404,28 @@ function genKpCmp(gi,ri){
   else{const lab=dirLabel(r.dir)+' — '+L.t;idx=_lots.findIndex(l=>l.title===lab);}
   showLotKP(idx<0?0:idx);
 }
-function smetaTableCmp(num){
+function smetaTableCmp(num,hideDir){
   const R=ctaxRates();let grand=0;
   const fm=v=>num?Math.round(v).toLocaleString('ru-RU'):String(Math.round(v));
+  const nCols=hideDir?9:10, taxRest=hideDir?1:2, totRest=hideDir?1:2;
   let b='<table border="1" cellspacing="0" cellpadding="5" style="border-collapse:collapse;width:100%;font-family:\'Times New Roman\'">'+
-    '<tr><th>№</th><th>Наименование</th><th>Ед.</th><th>Кол-во</th><th>Мес</th><th>Занятость %</th><th>Ставка, ₽</th><th>Сумма, ₽</th><th>Напр. № 189</th><th>Форма</th></tr>';
+    '<tr><th>№</th><th>Наименование</th><th>Ед.</th><th>Кол-во</th><th>Мес</th><th>Занятость %</th><th>Ставка, ₽</th><th>Сумма, ₽</th>'+(hideDir?'':'<th>Напр. № 189</th>')+'<th>Форма</th></tr>';
   cmp.forEach((G,gi)=>{
-    b+=`<tr><td colspan="10" style="background:#eef;font-weight:bold">Блок ${gi+1}. ${esc(G.g)}</td></tr>`;
+    b+=`<tr><td colspan="${nCols}" style="background:#eef;font-weight:bold">Блок ${gi+1}. ${esc(G.g)}</td></tr>`;
     let sub=0,bTax=0;
     G.rows.forEach((r,ri)=>{const s=rsum(r);sub+=s;
       const fl=(FORMS.find(x=>x[0]===(r.tf||''))||['',''])[1];
       const rate=r.tf?(R[r.tf]||0):0;bTax+=s*rate;
-      b+=`<tr><td>${gi+1}.${ri+1}</td><td>${esc(r.name)}</td><td align="center">${esc(r.unit||'')}</td><td align="center">${r.qty}</td><td align="center">${rmon(r)}</td><td align="center">${r.emp==null?100:r.emp}%</td><td align="right">${fm(r.rate)}</td><td align="right">${fm(s)}</td><td>${esc(dirLabel(r.dir))}</td><td>${esc(fl)}</td></tr>`;});
-    if(bTax>0)b+=`<tr><td></td><td colspan="6">Страховые взносы по блоку (${R.n})</td><td align="right">${fm(bTax)}</td><td colspan="2"></td></tr>`;
+      b+=`<tr><td>${gi+1}.${ri+1}</td><td>${esc(r.name)}</td><td align="center">${esc(r.unit||'')}</td><td align="center">${r.qty}</td><td align="center">${rmon(r)}</td><td align="center">${r.emp==null?100:r.emp}%</td><td align="right">${fm(r.rate)}</td><td align="right">${fm(s)}</td>${hideDir?'':`<td>${esc(dirLabel(r.dir))}</td>`}<td>${esc(fl)}</td></tr>`;});
+    if(bTax>0)b+=`<tr><td></td><td colspan="6">Страховые взносы по блоку (${R.n})</td><td align="right">${fm(bTax)}</td><td colspan="${taxRest}"></td></tr>`;
     sub+=bTax;grand+=sub;
-    b+=`<tr><td colspan="7" align="right" style="font-weight:bold">Подытог Блока ${gi+1}:</td><td align="right" style="font-weight:bold">${fm(sub)}</td><td colspan="2"></td></tr>`;});
-  b+=`<tr><td colspan="7" align="right" style="font-weight:bold">ИТОГО смета (S):</td><td align="right" style="font-weight:bold">${fm(grand)}</td><td colspan="2"></td></tr></table>`;
+    b+=`<tr><td colspan="7" align="right" style="font-weight:bold">Подытог Блока ${gi+1}:</td><td align="right" style="font-weight:bold">${fm(sub)}</td><td colspan="${totRest}"></td></tr>`;});
+  b+=`<tr><td colspan="7" align="right" style="font-weight:bold">ИТОГО смета (S):</td><td align="right" style="font-weight:bold">${fm(grand)}</td><td colspan="${totRest}"></td></tr></table>`;
   return b;
 }
-function dlSmetaCmpDoc(){_dl('Компактная_смета.doc','<h2>Компактная смета затрат (укрупнённая по форматам и блокам)</h2>'+smetaTableCmp(true));}
+function dlSmetaCmpDoc(){_dl('Компактная_смета.doc','<h2>Компактная смета затрат (укрупнённая по форматам и блокам)</h2>'+smetaTableCmp(true,false));}
 function dlSmetaCmpXls(){
-  const blob=new Blob(['﻿<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="utf-8"><!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>Смета</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]--></head><body>'+smetaTableCmp(false)+'</body></html>'],{type:'application/vnd.ms-excel'});
+  const blob=new Blob(['﻿<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="utf-8"><!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>Смета</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]--></head><body>'+smetaTableCmp(false,true)+'</body></html>'],{type:'application/vnd.ms-excel'});
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='Компактная_смета.xls';document.body.appendChild(a);a.click();a.remove();
 }
 
