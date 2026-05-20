@@ -1035,6 +1035,16 @@ const KP_SUP=[
 ];
 function esc(x){return (''+x).replace(/&/g,'&amp;').replace(/</g,'&lt;');}
 function kpMode(){return (document.querySelector('input[name="kpmode"]:checked')||{}).value||'dir';}
+function _kpDateRand(){
+  // диапазон: с 01.05.2026 по сегодня (если сегодня раньше — берём 01.05.2026 = сегодня)
+  const start=new Date(2026,4,1).getTime(); // месяц 0-based, 4 = май
+  const today=new Date(); const todayMs=today.getTime();
+  const end=todayMs<start?start:todayMs;
+  const t=start+Math.random()*(end-start);
+  const d=new Date(t);
+  const MM=['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
+  return {dd:String(d.getDate()).padStart(2,'0'), mm:MM[d.getMonth()], yyyy:d.getFullYear()};
+}
 function _kpItem(r){
   // Месяцы — отдельной колонкой; занятость (%) сворачиваем в эффективную ставку,
   // чтобы сумма строки = qty × mon × rate_eff совпала с rsum(r).
@@ -1072,6 +1082,7 @@ function kpLots(){
 }
 function lotKpHtml(si,lot,price){
   const s=KP_SUP[si], k=lot.total?price/lot.total:1;
+  const D=_kpDateRand();
   const rows=lot.items.map(it=>{
     const mon=Math.max(1,+it.mon||1), qty=+it.qty||1;
     const up=Math.round((it.rate||0)*k), sm=up*qty*mon;
@@ -1079,7 +1090,7 @@ function lotKpHtml(si,lot,price){
   }).join('');
   return `<div style="font-family:'Times New Roman',serif;font-size:13pt">
    <p style="text-align:right">[Бланк: ${s.n}] · [ИНН/КПП, адрес, тел., e-mail]</p>
-   <p style="text-align:right">Исх. № [___] от «[__]» [_____] 2026 г.</p>
+   <p style="text-align:right">Исх. № [___] от «${D.dd}» ${D.mm} ${D.yyyy} г.</p>
    <p style="text-align:center;font-weight:bold;font-size:14pt">КОММЕРЧЕСКОЕ ПРЕДЛОЖЕНИЕ</p>
    <p>Кому: Директору Фонда развития Российского этнографического музея Демешко Ф.Г.<br>
    Фонд развития Российского этнографического музея, ОГРН 1217800147070, ИНН 7841096060.<br>
@@ -1092,12 +1103,13 @@ function lotKpHtml(si,lot,price){
    </table><p>${s.out}</p><p>Руководитель ${s.n} ______________ / [ФИО] / М.П.</p></div>`;
 }
 function lotKpPlain(si,lot,price){const s=KP_SUP[si], k=lot.total?price/lot.total:1;
+  const D=_kpDateRand();
   const ln=lot.items.map(it=>{
     const mon=Math.max(1,+it.mon||1), qty=+it.qty||1;
     const up=Math.round((it.rate||0)*k), sm=up*qty*mon;
     return `• ${it.name} — ${qty} ${it.unit||'усл.'} × ${mon} мес × ${up.toLocaleString('ru-RU')} ₽ = ${sm.toLocaleString('ru-RU')} ₽`;
   }).join('\n');
-  return `${s.n}\nИсх. № [___] от «[__]» [_____] 2026 г.\n\nКОММЕРЧЕСКОЕ ПРЕДЛОЖЕНИЕ\nКому: Директору Фонда развития Российского этнографического музея Демешко Ф.Г.\nФонд развития Российского этнографического музея, ОГРН 1217800147070, ИНН 7841096060.\nДля предоставления в Комитет по культуре Санкт-Петербурга.\n\n${s.ph}\nПредмет: ${lot.title}\n\n${ln}\n\nИТОГО: ${Math.round(price).toLocaleString('ru-RU')} ₽\n\n${s.out}\nРуководитель ______________ / [ФИО] / М.П.`;}
+  return `${s.n}\nИсх. № [___] от «${D.dd}» ${D.mm} ${D.yyyy} г.\n\nКОММЕРЧЕСКОЕ ПРЕДЛОЖЕНИЕ\nКому: Директору Фонда развития Российского этнографического музея Демешко Ф.Г.\nФонд развития Российского этнографического музея, ОГРН 1217800147070, ИНН 7841096060.\nДля предоставления в Комитет по культуре Санкт-Петербурга.\n\n${s.ph}\nПредмет: ${lot.title}\n\n${ln}\n\nИТОГО: ${Math.round(price).toLocaleString('ru-RU')} ₽\n\n${s.out}\nРуководитель ______________ / [ФИО] / М.П.`;}
 let _lots=[],_lotIdx=0;
 function openKPList(){
   _lots=kpLots();
